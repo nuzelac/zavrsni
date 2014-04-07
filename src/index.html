@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<style>
+			body {
+				margin: 0px;
+				padding: 0px;
+			}
+			
+			.kineticjs-content {
+				background-color: #C0F2FA;
+			}
+		</style>
+	    <script src="http://d3lp1msu2r81bx.cloudfront.net/kjs/js/lib/kinetic-v5.0.2.min.js"></script>
+		<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+		<script type="text/javascript" src="//api.filepicker.io/v1/filepicker.js"></script>
+	</head>
+	<body>
+		<div id="container"></div>
+		<script defer="defer">
+			jQuery(function() {
+				filepicker.setKey("AA3wjJJ6eS16eoj9EXjjtz");
+				var $addingWhat = jQuery('#adding-what');
+				var elements = [];
+				jQuery('.widget-select').click(function() {
+					var $el = jQuery(this);
+					if($el.data('active') === '1') {
+						var children = layer.getChildren();
+						for(var i = 0; i < children.length; ++i) {
+							console.log(children[i]);
+							children[i].setDraggable(true);
+						}
+						$el.data('active', '0');
+						$addingWhat.html('nothing');
+					} else {
+						var children = layer.getChildren();
+						for(var i = 0; i < children.length; ++i) {
+							console.log(children[i]);
+							children[i].setDraggable(false);
+						}
+						jQuery('.widget-select').each(function() { jQuery(this).data('active', '0') });
+						$el.data('active', '1');
+						$addingWhat.html($el.data('type'));
+					}
+					// console.log($el.data('type'));
+				});
+
+				var stage = new Kinetic.Stage({
+					container: 'container',
+					width: 578,
+					height: 200
+				});
+
+				var layer = new Kinetic.Layer();
+				stage.add(layer);
+								
+				// dodati i za touchdown
+				stage.getContainer().addEventListener('mousedown', function(e) {
+					if($addingWhat.html() === 'text') {
+						var text = window.prompt("Please enter text", "");
+						if(text != null) {
+							
+							var kineticText = new Kinetic.Text({
+								x: e.pageX,
+								y: e.pageY,
+								text: text,
+								fontSize: 30,
+								fontFamily: 'Calibri',
+								fill: 'green',
+								draggable: false
+							});
+							
+							layer.add(kineticText);
+							layer.draw();
+						}
+					} else if($addingWhat.html() === 'image') {
+						filepicker.pick({
+						    mimetypes: ['image/*'],
+						    container: 'window',
+						  },
+						  function(InkBlob){
+							  console.log(InkBlob.url);
+							  var imageObj = new Image();
+							  imageObj.onload = function() {
+								  var image = new Kinetic.Image({
+									  x: e.pageX,
+									  y: e.pageY,
+									  image: imageObj,
+									  width: 50,
+									  height: 50,
+								  });
+								  
+								  layer.add(image);
+								  layer.draw();
+							  }
+							  imageObj.src = InkBlob.url;
+						    // console.log(JSON.stringify(InkBlob));
+						  },
+						  function(FPError){
+						    console.log(FPError.toString());
+						  }
+						);
+					}
+
+				});
+
+			});		
+		
+			
+		
+			// var layer = new Kinetic.Layer();
+
+			// 
+			// var rect = new Kinetic.Rect({
+			// 	x: 239,
+			// 	y: 75,
+			// 	width: 100,
+			// 	height: 50,
+			// 	fill: 'green',
+			// 	stroke: 'black',
+			// 	strokeWidth: 4,
+			// 	draggable: true
+			// });
+			
+			// layer.add(rect);
+			
+			// stage.add(layer);
+		</script>
+	</body>
+	Adding: <span id="adding-what">nothing</span><br />
+	<a href="#" class="widget-select" data-type="text" data-active="0">Text</a><br />
+	<a href="#" class="widget-select" data-type="image" data-active="0">Image</a><br />
+	Video <br />
+	Hyperlink <br />
+</html>
