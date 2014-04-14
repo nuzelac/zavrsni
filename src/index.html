@@ -14,6 +14,7 @@
 	    <script src="http://d3lp1msu2r81bx.cloudfront.net/kjs/js/lib/kinetic-v5.0.2.min.js"></script>
 		<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript" src="//api.filepicker.io/v1/filepicker.js"></script>
+		<script type="text/javascript" src="/scripts/socket.io.min.js"></script>
 	</head>
 	<body>
 		<div id="container"></div>
@@ -21,13 +22,16 @@
 			jQuery(function() {
 				filepicker.setKey("AA3wjJJ6eS16eoj9EXjjtz");
 				var $addingWhat = jQuery('#adding-what');
+
+				var socket = io.connect('http://localhost:4000');
+
 				var elements = [];
 				jQuery('.widget-select').click(function() {
 					var $el = jQuery(this);
 					if($el.data('active') === '1') {
 						var children = layer.getChildren();
 						for(var i = 0; i < children.length; ++i) {
-							console.log(children[i]);
+							// console.log(children[i]);
 							children[i].setDraggable(true);
 						}
 						$el.data('active', '0');
@@ -35,7 +39,7 @@
 					} else {
 						var children = layer.getChildren();
 						for(var i = 0; i < children.length; ++i) {
-							console.log(children[i]);
+							// console.log(children[i]);
 							children[i].setDraggable(false);
 						}
 						jQuery('.widget-select').each(function() { jQuery(this).data('active', '0') });
@@ -53,7 +57,7 @@
 
 				var layer = new Kinetic.Layer();
 				stage.add(layer);
-								
+
 				// dodati i za touchdown
 				stage.getContainer().addEventListener('mousedown', function(e) {
 					if($addingWhat.html() === 'text') {
@@ -72,6 +76,8 @@
 							
 							layer.add(kineticText);
 							layer.draw();
+
+							socket.emit('createElement', { bok: 'test' });
 						}
 					} else if($addingWhat.html() === 'image') {
 						filepicker.pick({
@@ -106,25 +112,6 @@
 
 			});		
 		
-			
-		
-			// var layer = new Kinetic.Layer();
-
-			// 
-			// var rect = new Kinetic.Rect({
-			// 	x: 239,
-			// 	y: 75,
-			// 	width: 100,
-			// 	height: 50,
-			// 	fill: 'green',
-			// 	stroke: 'black',
-			// 	strokeWidth: 4,
-			// 	draggable: true
-			// });
-			
-			// layer.add(rect);
-			
-			// stage.add(layer);
 		</script>
 	</body>
 	Adding: <span id="adding-what">nothing</span><br />
