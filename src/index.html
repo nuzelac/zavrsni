@@ -58,26 +58,42 @@
 				var layer = new Kinetic.Layer();
 				stage.add(layer);
 
+				function addText(x, y, text) {
+					var kineticText = new Kinetic.Text({
+						x: x,
+						y: y,
+						text: text,
+						fontSize: 30,
+						fontFamily: 'Calibri',
+						fill: 'green',
+						draggable: false
+					});
+					
+					layer.add(kineticText);
+					layer.draw();
+				}
+
+				socket.on('createElement', function(data) {
+					console.log(data);
+					if(data.type === 'text') {
+						addText(data.x, data.y, data.text);
+					}
+				});
+
 				// dodati i za touchdown
 				stage.getContainer().addEventListener('mousedown', function(e) {
 					if($addingWhat.html() === 'text') {
 						var text = window.prompt("Please enter text", "");
 						if(text != null) {
+
+							addText(e.pageX, e.pageY, text);
 							
-							var kineticText = new Kinetic.Text({
+							socket.emit('createElement', { 
 								x: e.pageX,
 								y: e.pageY,
-								text: text,
-								fontSize: 30,
-								fontFamily: 'Calibri',
-								fill: 'green',
-								draggable: false
+								type: 'text',
+								text: text
 							});
-							
-							layer.add(kineticText);
-							layer.draw();
-
-							socket.emit('createElement', { bok: 'test' });
 						}
 					} else if($addingWhat.html() === 'image') {
 						filepicker.pick({
