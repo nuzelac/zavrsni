@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bok</title>
+    <title>Very smart board</title>
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -15,19 +15,21 @@
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-		<style>			
-			.kineticjs-content {
-				background-color: #C0F2FA;
-			}
-		</style>    
+    <link href="css/style.css" rel="stylesheet">
+
+			
   </head>
   <body>
-		<div id="container"></div>
-		Adding: <span id="adding-what">nothing</span><br />
-		<a href="" class="widget-select" data-type="text" data-active="0">Text</a><br />
-		<a href="" class="widget-select" data-type="image" data-active="0">Image</a><br />
-		Video <br />
-		Hyperlink <br />
+		
+
+
+    <form class="form-signin" role="form">
+      <h2 class="form-signin-heading">Please sign in</h2>
+      <input type="text" class="form-control" placeholder="Username" required autofocus name="username" id="username">
+      <input type="password" class="form-control" placeholder="Password" required name="password" id="password">
+      <button class="btn btn-lg btn-primary btn-block" type="submit" id="login">Login</button>
+      <span class="pull-right"><a href="register.html">Register</a></span>
+    </form>
 
 	  <script src="js/kinetic-v5.1.0.min.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
@@ -37,27 +39,6 @@
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-
-		<!-- Modal -->
-		<div class="modal fade" id="imageUploadModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-		  <div class="modal-dialog">
-		    <div class="modal-content">
-		      <div class="modal-header">
-		        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		        <h4 class="modal-title" id="myModalLabel">Upload an image</h4>
-		      </div>
-		      <div class="modal-body">
-		        <form id="imageUploadForm" enctype="multipart/form-data" action="http://0.0.0.0:4000/api/images" method="post">
-		        	<input type="file" id="canvasPhotoInput" name="canvasPhoto" required/>
-		        </form>
-		      </div>
-		      <div class="modal-footer">
-		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-		        <button type="button" class="btn btn-primary">Save</button>
-		      </div>
-		    </div>
-		  </div>
-		</div>
 
   </body>
 </html>

@@ -1,4 +1,23 @@
 jQuery(function() {
+	$('#login').click(function(e) {
+		e.preventDefault();
+
+		$.post('/api/login', {
+			username: $('#username').val(),
+			password: $('#password').val()
+		}).success(function(data) {
+			if(data.success === true) {
+				console.log(data);
+				// show drawing board
+			} else {
+				alert(data.error);
+			}
+		}).fail(function(data) {
+			alert("Error! Please try again later");
+		});
+	});	
+
+
 	var $addingWhat = jQuery('#adding-what');
 
 	var socket = io.connect('http://localhost:4000');
