@@ -1,4 +1,59 @@
 jQuery(function() {
+	var jwtoken, socket;
+
+	var transitionToMainMenu = function() {
+		// hide login
+		$('.form-signin').hide();
+		$('#mainMenu').show();
+	};
+
+	var loadBoards = function() {
+		$.get('/api/boards')
+			.success(function(data) {
+				$('#existing-board-list').empty();
+				data.boards.forEach(function(board) {
+					$('#existing-board-list').append("<li>" + board.topic + ", user: " + board.user + ", admin: " + board.admin + "</li>");
+				});
+
+			})
+			.fail(function(data) {
+				alert("error loading boards");
+			});
+	}
+
+	var setupSocketIO = function(jwtoken) {
+		socket = io.connect('http://localhost:4000', {
+			query: 'token=' + jwtoken
+		});
+
+		socket.on('newBoard', function(data) {
+			loadBoards();
+		})
+
+		socket.on('createElement', function(data) {
+			console.log(data);
+			if(data.type === 'text') {
+				addText(data.x, data.y, data.text, data.id);
+			}
+		});
+
+		socket.on('moveElement', function(data) {
+			console.log("moving " + data.id);
+
+			var widget = layer.find('#' + data.id)[0];
+
+			widget.setPosition({x: data.x, y: data.y});
+			layer.draw();
+		});
+	}
+
+	$.ajaxSetup({
+	    beforeSend: function(xhr) {
+	        if (!jwtoken) return;
+	        xhr.setRequestHeader('Authorization', 'Bearer ' + jwtoken);
+	    }
+	});
+
 	$('#login').click(function(e) {
 		e.preventDefault();
 
@@ -7,20 +62,39 @@ jQuery(function() {
 			password: $('#password').val()
 		}).success(function(data) {
 			if(data.success === true) {
+				console.log("Logged in ...");
 				console.log(data);
 				// show drawing board
+				jwtoken = data.token;
+
+				setupSocketIO(jwtoken);
+				transitionToMainMenu();
+				loadBoards();
 			} else {
 				alert(data.error);
 			}
 		}).fail(function(data) {
 			alert("Error! Please try again later");
 		});
-	});	
+	});
+
+	$('#new-board-submit').click(function(e) {
+		e.preventDefault();
+
+		$.post('/api/boards', {
+			topic: $('#new-board-topic').val(),
+			token: jwtoken,
+		}).success(function(data) {
+			console.log("success board creation");
+			console.log(data);
+		}).fail(function(data) {
+			console.log("fail board creation");
+			console.log(data);
+		});
+	});
 
 
 	var $addingWhat = jQuery('#adding-what');
-
-	var socket = io.connect('http://localhost:4000');
 
 	var elements = [];
 	jQuery('.widget-select').click(function(e) {
@@ -80,22 +154,6 @@ jQuery(function() {
 		layer.add(kineticText);
 		layer.draw();
 	}
-
-	socket.on('createElement', function(data) {
-		console.log(data);
-		if(data.type === 'text') {
-			addText(data.x, data.y, data.text, data.id);
-		}
-	});
-
-	socket.on('moveElement', function(data) {
-		console.log("moving " + data.id);
-
-		var widget = layer.find('#' + data.id)[0];
-
-		widget.setPosition({x: data.x, y: data.y});
-		layer.draw();
-	});
 
 	// dodati i za touchdown
 	stage.getContainer().addEventListener('mousedown', function(e) {

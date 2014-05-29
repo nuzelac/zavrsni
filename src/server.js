@@ -7,9 +7,11 @@ var express = require('express'),
     util = require('util'),
     mongoose = require('mongoose'),
     User = require('./user-model'),
+    Board = require('./board-model'),
     bodyParser = require('body-parser'),
     jwt = require('jsonwebtoken'),
-    socketioJwt = require('socketio-jwt');
+    socketioJwt = require('socketio-jwt'),
+    expressJwt = require('express-jwt');
 
 app.use('/media', express.static(__dirname + '/media'));
 app.use('/js', express.static(__dirname + '/js'));
@@ -51,7 +53,7 @@ app.post('/api/login', function(req, res) {
       user.comparePassword(password, function(err, isMatch) {
         if(err) res.json({success: false, error: err });
         if(isMatch) {
-          var token = jwt.sign(user, jwtSecret, { expiresInMinutes: 60*5 });
+          var token = jwt.sign({ _id: user._id, _username: user.username }, jwtSecret, { expiresInMinutes: 60*24 });
 
           res.json({success: true, token: token});
         } else {
@@ -65,12 +67,64 @@ app.post('/api/login', function(req, res) {
   });
 });
 
+app.post('/api/boards',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    var topic = req.body.topic;
+
+    console.log("Authorized...");
+    console.log(req.user);
+    console.log("Topic: " + topic);
+
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      var board = new Board({
+        topic: topic
+      });
+
+      board.admins.push(user);
+      board.users.push(user);
+      board.save(function(err) {
+        if (err) res.json({ success: false, error: err });
+
+        sio.sockets.emit('newBoard');
+
+        res.json({ success: true });        
+      });
+    });
+  }
+);
+
+app.get('/api/boards',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.find({}, function(err, boards) {
+        var userBoards = [];
+        boards.forEach(function(board) {
+          userBoards.push({
+            _id: board._id,
+            topic: board.topic,
+            user: (board.users.indexOf(req.user._id) !== -1),
+            admin: (board.admins.indexOf(req.user._id) !== -1),
+          });
+        });
+
+        res.send({ success:true, boards: userBoards });
+      });
+    });
+  }
+);
+
 app.post('/api/register', function(req, res) {
   var username = req.body.username,
       password = req.body.password;
 
   User.findOne({ username: username }, function(err, user) {
-    if(err) res.json(err);
+    if(err) res.json({ success: false, error: err });
 
     if(user === null) {
       var user = new User({
@@ -79,7 +133,7 @@ app.post('/api/register', function(req, res) {
       });
 
       user.save(function(err) {
-        if (err) res.json(err);
+        if (err) res.json({ success: false, error: err });
 
         res.json({ success: true });
       })
@@ -96,7 +150,9 @@ sio.set('authorization', socketioJwt.authorize({
 );
 
 sio.sockets.on('connection', function(socket) {
-  console.log(socket.handshake.decoded_token.email, 'connected');  
+  console.log('decoded_token');
+  console.log(socket.handshake.decoded_token);
+  // console.log(socket.handshake.decoded_token.email, 'connected');  
 	
   socket.on('createElement', function(data) {
 		console.log('createElement');
