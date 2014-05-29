@@ -119,6 +119,15 @@ app.get('/api/boards',
   }
 );
 
+app.get('/api/boards/:id',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    console.log('board id' + req.params.id);
+
+    res.json("ok");
+  }
+);
+
 app.post('/api/register', function(req, res) {
   var username = req.body.username,
       password = req.body.password;

@@ -39,6 +39,8 @@ body {
   border-top-right-radius: 0;
 }
 
-.kineticjs-content {
+#container {
   background-color: #C0F2FA;
+  display: inline-block;  
+  max-width: 1000px;
 }

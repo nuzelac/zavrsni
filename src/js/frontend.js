@@ -1,5 +1,5 @@
 jQuery(function() {
-	var jwtoken, socket;
+	var jwtoken, socket, boardId;
 
 	var transitionToMainMenu = function() {
 		// hide login
@@ -7,12 +7,17 @@ jQuery(function() {
 		$('#mainMenu').show();
 	};
 
+	var transitionToBoard = function() {
+		$('#mainMenu').hide();
+		$('#board').show();
+	}
+
 	var loadBoards = function() {
 		$.get('/api/boards')
 			.success(function(data) {
 				$('#existing-board-list').empty();
 				data.boards.forEach(function(board) {
-					$('#existing-board-list').append("<li>" + board.topic + ", user: " + board.user + ", admin: " + board.admin + "</li>");
+					$('#existing-board-list').append("<li>" + board.topic + ", user: " + board.user + ", admin: " + board.admin + " <a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a></li>");
 				});
 
 			})
@@ -93,6 +98,19 @@ jQuery(function() {
 		});
 	});
 
+	$(document).on('click', '.join-board-link', function(e) {
+		console.log("bok");
+		$.get('/api/boards/' + $(e.target).data('board-id'))
+				.success(function(data) {
+					console.log("loaded board...");
+					transitionToBoard(data);
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+
+	});
+
 
 	var $addingWhat = jQuery('#adding-what');
 
@@ -121,14 +139,105 @@ jQuery(function() {
 		// console.log($el.data('type'));
 	});
 
+	var maxStageWidth = 800;
+	var maxStageHeight = 400;
+	var maxPageWidth = 900;
+	var maxPageHeight = 500;
+
+	// Check to see if window is less than desired width and calls sizing functions
+	function setStageWidth() {
+			// console.log("pozz");
+	    if (window.innerWidth < maxPageWidth) {
+
+	        resizeStage();
+
+	    } else {
+
+	        maxStageSize();
+
+	    };
+	};
+
+	 // Sets scale and dimensions of stage in relation to window size
+  function resizeStage() {
+
+     var horizScalePercentage = window.innerWidth / maxPageWidth; 
+     var vertiScalePercentage = window.innerHeight/ maxPageHeight; 
+
+     var scalePercentage = Math.min(horizScalePercentage, vertiScalePercentage);
+
+     // stage.setAttr('scaleX', horizScalePercentage );
+     // stage.setAttr('scaleY', vertiScalePercentage );
+     stage.setAttr('scaleX', scalePercentage );
+     stage.setAttr('scaleY', scalePercentage );
+
+     stage.setAttr('width', maxStageWidth * scalePercentage );
+     stage.setAttr('height', maxStageHeight * scalePercentage );
+     stage.draw();
+  };
+
+  //Sets scale and dimensions of stage to max settings
+  function maxStageSize() {
+      stage.setAttr('scaleX', 1);
+      stage.setAttr('scaleY', 1);
+      stage.setAttr('width', maxStageWidth);
+      stage.setAttr('height', maxStageHeight);
+      stage.draw();
+  };
+
 	var stage = new Kinetic.Stage({
-		container: 'container',
-		width: 800,
-		height: 500
+	    container: 'container',
+	    width: maxStageWidth,
+	    height: maxStageHeight,
+	    scaleX: 1,
+	    scaleY: 1,
 	});
+
+	// var circles = new Kinetic.Layer();
+
+	// var circleRed = new Kinetic.Circle({
+	//     x: stage.getWidth() / 2,
+	//     y: stage.getHeight() / 2,
+	//     radius: 100,
+	//     stroke: 'black',
+	//     strokeWidth: 2,
+	//     fill: 'red'
+	// });
+
+	// var circleBlue = new Kinetic.Circle({
+	//     x: stage.getWidth() / 2 + 120,
+	//     y: stage.getHeight() / 2 + 175,
+	//     radius: 50,
+	//     stroke: 'black',
+	//     strokeWidth: 2,
+	//     fill: 'blue'
+	// });
+
+	// var circleOrange = new Kinetic.Circle({
+	//     x: stage.getWidth() / 2 - 175,
+	//     y: stage.getHeight() / 2 + 100,
+	//     radius: 75,
+	//     stroke: 'black',
+	//     strokeWidth: 2,
+	//     fill: 'orange'
+	// });
+
+	// circles.add(circleRed);
+	// circles.add(circleBlue);
+	// circles.add(circleOrange);
+
+	// stage.add(circles);
+
+	// On load we set stage size based on window size
+	setStageWidth();
+
+	// On window resize we resize the stage size
+	window.addEventListener('resize', setStageWidth);
 
 	var layer = new Kinetic.Layer();
 	stage.add(layer);
+
+	addText(100, 100, "Pozdrav", "1");
 
 	function addText(x, y, text, id) {
 		var kineticText = new Kinetic.Text({
