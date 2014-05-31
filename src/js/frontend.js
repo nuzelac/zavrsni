@@ -143,12 +143,56 @@ function ImageWidgetCreator(x, y) {
 	});
 }
 
-// function LinkWidget(x, y) {
-// 	this.base = BoardWidget;
-// 	this.base(x, y);
-// }
-// LinkWidget.prototype = new BoardWidget;
+function LinkWidget(id, x, y, href) {
+	this.base = BoardWidget;
+	this.base(id, x, y);
 
+	this.href = href;
+}
+LinkWidget.prototype = new BoardWidget;
+
+function LinkWidgetCreator(x, y) {
+	var link = window.prompt("Please enter the link", "http://");
+	if(link == null) return null;
+
+	var id = 'link' + Math.random();
+
+	var kineticText = new Kinetic.Text({
+		x: x,
+		y: y,
+		text: link,
+		fontSize: 30,
+		fontFamily: 'Calibri',
+		fill: 'blue',
+		draggable: true,
+		id: id
+	});
+
+	kineticText.on('dblclick dbltap', function(e) {
+		var url = e.target.text();
+		window.open(url, '_blank');
+	});
+
+	// kineticText.on('dragstart dragmove dragend', function(e) {
+	// 	// console.log(e);
+	// 	socket.emit('moveElement', {
+	// 		x: e.clientX,
+	// 		y: e.clientY,
+	// 		id: id
+	// 	})
+	// });
+	
+	layer.add(kineticText);
+	layer.draw();
+		
+	// socket.emit('createElement', { 
+	// 	x: e.pageX,
+	// 	y: e.pageY,
+	// 	type: 'text',
+	// 	text: text,
+	// 	id: id
+	// });
+}
 // function VideoWidget(x, y) {
 // 	this.base = BoardWidget;
 // 	this.base(x, y);		
