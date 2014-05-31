@@ -67,6 +67,11 @@ function ImageWidget(id, x, y, src) {
 }
 ImageWidget.prototype = new BoardWidget;
 function ImageWidgetCreator(x, y) {
+
+	$('#imageUploadModal').on('hidden.bs.modal', function() {
+		$('#imageUploadForm').off('submit');
+	});
+
 	$('#imageUploadModal').modal('show');
 
 	// var timer;
@@ -134,6 +139,7 @@ function ImageWidgetCreator(x, y) {
 				  addAnchor(group, width, height, "bottomRight");
 				  addAnchor(group, 0, height, "bottomLeft");
 
+				  group.moveToBottom();
 				  layer.draw();
 			  }
 			  imageObj.src = imageUrl;
