@@ -1,3 +1,57 @@
+function WidgetFactory() {
+	this.map = {};
+}
+
+WidgetFactory.prototype.registerWidget = function(name, klass) {
+	this.map[name] = klass;
+	console.log("Registered " + name + ": " + klass);
+}
+
+WidgetFactory.prototype.newWidget = function(name, x, y) {
+	if(name in this.map) {
+		console.log("Creating " + this.map[name] + " in factory");
+		return new window[this.map[name]](x, y);
+	} else {
+		console.log("Unable to create widget " + name);
+	}
+}	
+
+var factory = new WidgetFactory;
+
+function BoardWidget(x, y) {
+	this.x = x || 0;
+	this.y = y || 0;
+}
+
+function TextWidget(x, y) {
+	this.base = BoardWidget;
+	this.base(x, y);
+}
+TextWidget.prototype = new BoardWidget;
+factory.registerWidget("text", "TextWidget");
+
+function ImageWidget(x, y) {
+	this.base = BoardWidget;
+	this.base(x, y);		
+}
+ImageWidget.prototype = new BoardWidget;
+factory.registerWidget("image", "ImageWidget");
+
+function LinkWidget(x, y) {
+	this.base = BoardWidget;
+	this.base(x, y);
+}
+LinkWidget.prototype = new BoardWidget;
+factory.registerWidget("link", "LinkWidget");
+
+function VideoWidget(x, y) {
+	this.base = BoardWidget;
+	this.base(x, y);		
+}
+VideoWidget.prototype = new BoardWidget;
+factory.registerWidget("video", "VideoWidget");
+
+
 jQuery(function() {
 	var jwtoken, socket, boardId;
 
@@ -108,8 +162,23 @@ jQuery(function() {
 				.fail(function(data) {
 					alert("Error loading board");
 				});
-
 	});
+
+	$('.board-tool').draggable({
+		helper: 'clone',
+		containment: 'container',
+		// stop: function (ev, ui) {
+
+		// }
+	});
+
+	$('#container').droppable({
+		drop: function (ev, ui) {
+			var $element = $(ui.draggable);
+			var widget = factory.newWidget($element.data('tool-type'), 5, 5);
+		}
+	});
+
 
 
 	var $addingWhat = jQuery('#adding-what');
