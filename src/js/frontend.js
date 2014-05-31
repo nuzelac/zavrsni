@@ -1,60 +1,83 @@
-function WidgetFactory() {
-	this.map = {};
-}
+var jwtoken, socket, boardId, layer;
 
-WidgetFactory.prototype.registerWidget = function(name, klass) {
-	this.map[name] = klass;
-	console.log("Registered " + name + ": " + klass);
-}
-
-WidgetFactory.prototype.newWidget = function(name, x, y) {
-	if(name in this.map) {
-		console.log("Creating " + this.map[name] + " in factory");
-		return new window[this.map[name]](x, y);
-	} else {
-		console.log("Unable to create widget " + name);
-	}
-}	
-
-var factory = new WidgetFactory;
-
-function BoardWidget(x, y) {
+function BoardWidget(id, x, y) {
 	this.x = x || 0;
 	this.y = y || 0;
 }
 
-function TextWidget(x, y) {
+function TextWidget(id, x, y, text) {
 	this.base = BoardWidget;
-	this.base(x, y);
+	this.base(id, x, y);
 }
 TextWidget.prototype = new BoardWidget;
-factory.registerWidget("text", "TextWidget");
 
-function ImageWidget(x, y) {
-	this.base = BoardWidget;
-	this.base(x, y);		
-}
-ImageWidget.prototype = new BoardWidget;
-factory.registerWidget("image", "ImageWidget");
+function TextWidgetCreator(x, y) {
+	var text = window.prompt("Please enter text", "");
+	if(text == null) return null;
 
-function LinkWidget(x, y) {
-	this.base = BoardWidget;
-	this.base(x, y);
-}
-LinkWidget.prototype = new BoardWidget;
-factory.registerWidget("link", "LinkWidget");
+	var id = 'text' + Math.random();
 
-function VideoWidget(x, y) {
-	this.base = BoardWidget;
-	this.base(x, y);		
+	var kineticText = new Kinetic.Text({
+		x: x,
+		y: y,
+		text: text,
+		fontSize: 30,
+		fontFamily: 'Calibri',
+		fill: 'green',
+		draggable: true,
+		id: id
+	});
+
+	// kineticText.on('dragstart dragmove dragend', function(e) {
+	// 	// console.log(e);
+	// 	socket.emit('moveElement', {
+	// 		x: e.clientX,
+	// 		y: e.clientY,
+	// 		id: id
+	// 	})
+	// });
+	
+	layer.add(kineticText);
+	layer.draw();
+		
+	// socket.emit('createElement', { 
+	// 	x: e.pageX,
+	// 	y: e.pageY,
+	// 	type: 'text',
+	// 	text: text,
+	// 	id: id
+	// });
 }
-VideoWidget.prototype = new BoardWidget;
-factory.registerWidget("video", "VideoWidget");
+
+function WidgetCreator(name) {
+	var args = Array.prototype.slice.call(arguments);
+	args.shift();
+	return self[name + "WidgetCreator"].apply(this, args);
+}
+
+// function ImageWidget(x, y) {
+// 	this.base = BoardWidget;
+// 	this.base(x, y);		
+// }
+// ImageWidget.prototype = new BoardWidget;
+// factory.registerWidget("image", "ImageWidget");
+
+// function LinkWidget(x, y) {
+// 	this.base = BoardWidget;
+// 	this.base(x, y);
+// }
+// LinkWidget.prototype = new BoardWidget;
+// factory.registerWidget("link", "LinkWidget");
+
+// function VideoWidget(x, y) {
+// 	this.base = BoardWidget;
+// 	this.base(x, y);		
+// }
+// VideoWidget.prototype = new BoardWidget;
+// factory.registerWidget("video", "VideoWidget");
 
 
 jQuery(function() {
-	var jwtoken, socket, boardId;
-
 	var transitionToMainMenu = function() {
 		// hide login
 		$('.form-signin').hide();
@@ -174,39 +197,39 @@ jQuery(function() {
 
 	$('#container').droppable({
 		drop: function (ev, ui) {
-			var $element = $(ui.draggable);
-			var widget = factory.newWidget($element.data('tool-type'), 5, 5);
+			console.log(ui.offset);
+			console.log(ui.position);
+			var widget = WidgetCreator(ui.draggable.data('tool-type'), ui.position.left, ui.position.top+16);
 		}
 	});
 
 
 
-	var $addingWhat = jQuery('#adding-what');
+	// var $addingWhat = jQuery('#adding-what');
 
-	var elements = [];
-	jQuery('.widget-select').click(function(e) {
-		e.preventDefault();
-		var $el = jQuery(this);
-		if($el.data('active') === '1') {
-			var children = layer.getChildren();
-			for(var i = 0; i < children.length; ++i) {
-				// console.log(children[i]);
-				children[i].setDraggable(true);
-			}
-			$el.data('active', '0');
-			$addingWhat.html('nothing');
-		} else {
-			var children = layer.getChildren();
-			for(var i = 0; i < children.length; ++i) {
-				// console.log(children[i]);
-				children[i].setDraggable(false);
-			}
-			jQuery('.widget-select').each(function() { jQuery(this).data('active', '0') });
-			$el.data('active', '1');
-			$addingWhat.html($el.data('type'));
-		}
-		// console.log($el.data('type'));
-	});
+	// jQuery('.widget-select').click(function(e) {
+	// 	e.preventDefault();
+	// 	var $el = jQuery(this);
+	// 	if($el.data('active') === '1') {
+	// 		var children = layer.getChildren();
+	// 		for(var i = 0; i < children.length; ++i) {
+	// 			// console.log(children[i]);
+	// 			children[i].setDraggable(true);
+	// 		}
+	// 		$el.data('active', '0');
+	// 		$addingWhat.html('nothing');
+	// 	} else {
+	// 		var children = layer.getChildren();
+	// 		for(var i = 0; i < children.length; ++i) {
+	// 			// console.log(children[i]);
+	// 			children[i].setDraggable(false);
+	// 		}
+	// 		jQuery('.widget-select').each(function() { jQuery(this).data('active', '0') });
+	// 		$el.data('active', '1');
+	// 		$addingWhat.html($el.data('type'));
+	// 	}
+	// 	// console.log($el.data('type'));
+	// });
 
 	var maxStageWidth = 800;
 	var maxStageHeight = 400;
@@ -298,35 +321,35 @@ jQuery(function() {
 	// On window resize we resize the stage size
 	window.addEventListener('resize', setStageWidth);
 
-	var layer = new Kinetic.Layer();
+	layer = new Kinetic.Layer();
 	stage.add(layer);
 
 	// addText(100, 100, "Pozdrav", "1");
 
-	function addText(x, y, text, id) {
-		var kineticText = new Kinetic.Text({
-			x: x,
-			y: y,
-			text: text,
-			fontSize: 30,
-			fontFamily: 'Calibri',
-			fill: 'green',
-			draggable: true,
-			id: id
-		});
+	// function addText(x, y, text, id) {
+	// 	var kineticText = new Kinetic.Text({
+	// 		x: x,
+	// 		y: y,
+	// 		text: text,
+	// 		fontSize: 30,
+	// 		fontFamily: 'Calibri',
+	// 		fill: 'green',
+	// 		draggable: true,
+	// 		id: id
+	// 	});
 
-		kineticText.on('dragstart dragmove dragend', function(e) {
-			// console.log(e);
-			socket.emit('moveElement', {
-				x: e.clientX,
-				y: e.clientY,
-				id: id
-			})
-		});
+	// 	kineticText.on('dragstart dragmove dragend', function(e) {
+	// 		// console.log(e);
+	// 		socket.emit('moveElement', {
+	// 			x: e.clientX,
+	// 			y: e.clientY,
+	// 			id: id
+	// 		})
+	// 	});
 		
-		layer.add(kineticText);
-		layer.draw();
-	}
+	// 	layer.add(kineticText);
+	// 	layer.draw();
+	// }
 
 	// dodati i za touchdown
 	stage.getContainer().addEventListener('mousedown', function(e) {
