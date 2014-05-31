@@ -99,16 +99,41 @@ function ImageWidgetCreator(x, y) {
 
 			  var imageObj = new Image();
 			  imageObj.onload = function() {
+			  	var group = new Kinetic.Group({
+			  		x: x,
+			  		y: y,
+			  		draggable: true
+			  	});
+				  layer.add(group);
+
+				  var maxdim = 100;
+				  var ratio;
+				  if(imageObj.width <= maxdim && imageObj.height <= maxdim) {
+				  	ratio = 1;
+				  } else {
+				  	ratio = Math.max(imageObj.width / maxdim, imageObj.height / maxdim);
+				  }
+				  var width = imageObj.width / ratio;
+				  var height = imageObj.height / ratio;
+
+
 				  var image = new Kinetic.Image({
-					  x: x,
-					  y: y,
+					  x: 0,
+					  y: 0,
 					  image: imageObj,
-					  width: 50,
-					  height: 50,
-					  draggable: true,
+					  width: width,
+					  height: height,
+					  // draggable: true,
+					  name: "image",
 				  });
-				  
-				  layer.add(image);
+
+
+				  group.add(image);
+				  addAnchor(group, 0, 0, "topLeft");
+				  addAnchor(group, width, 0, "topRight");
+				  addAnchor(group, width, height, "bottomRight");
+				  addAnchor(group, 0, height, "bottomLeft");
+
 				  layer.draw();
 			  }
 			  imageObj.src = imageUrl;
