@@ -1,4 +1,8 @@
 var jwtoken, socket, boardId, layer;
+var maxStageWidth = 800;
+var maxStageHeight = 400;
+var maxPageWidth = 900;
+var maxPageHeight = 500;
 
 function BoardWidget(id, x, y) {
 	this.x = x || 0;
@@ -55,26 +59,73 @@ function WidgetCreator(name) {
 	return self[name + "WidgetCreator"].apply(this, args);
 }
 
-// function ImageWidget(x, y) {
-// 	this.base = BoardWidget;
-// 	this.base(x, y);		
-// }
-// ImageWidget.prototype = new BoardWidget;
-// factory.registerWidget("image", "ImageWidget");
+function ImageWidget(id, x, y, src) {
+	this.base = BoardWidget;
+	this.base(x, y);		
+}
+ImageWidget.prototype = new BoardWidget;
+function ImageWidgetCreator(x, y) {
+	$('#imageUploadModal').modal({
+
+	});
+
+	// var timer;
+	// timer = setInterval(function() {
+	// 	if($('#canvasPhotoInput').val() !== '') {
+	// 		clearInterval(timer);
+	// 		$('#imageUploadForm').submit();
+	// 	}
+	// }, 500);
+
+	$('#imageUploadForm').submit(function(e) {
+		e.preventDefault();
+
+		$(this).ajaxSubmit({ 
+			error: function(xhr) {
+				$('#canvasPhotoInput').val('');
+				console.log("ERROR uploading file");
+			},
+
+			success: function(response) {
+				$('#canvasPhotoInput').val('');
+				if(response.error) {
+					console.log("ERROR from server while uploading file");
+					return;
+				}
+
+				var imageUrl = response.path;
+				console.log(imageUrl);
+			  // var imageObj = new Image();
+			  // imageObj.onload = function() {
+				 //  var image = new Kinetic.Image({
+					//   x: e.pageX,
+					//   y: e.pageY,
+					//   image: imageObj,
+					//   width: 50,
+					//   height: 50,
+				 //  });
+				  
+				 //  layer.add(image);
+				 //  layer.draw();
+			  // }
+			  // imageObj.src = imageUrl;
+
+			}
+		});
+	});
+}
 
 // function LinkWidget(x, y) {
 // 	this.base = BoardWidget;
 // 	this.base(x, y);
 // }
 // LinkWidget.prototype = new BoardWidget;
-// factory.registerWidget("link", "LinkWidget");
 
 // function VideoWidget(x, y) {
 // 	this.base = BoardWidget;
 // 	this.base(x, y);		
 // }
 // VideoWidget.prototype = new BoardWidget;
-// factory.registerWidget("video", "VideoWidget");
 
 
 jQuery(function() {
@@ -197,8 +248,8 @@ jQuery(function() {
 
 	$('#container').droppable({
 		drop: function (ev, ui) {
-			var x = ui.position.left;
-			var y = ui.position.top+16;
+			var x = (ui.position.left) / stage.getAttr('scaleX');
+			var y = (ui.position.top+16) / stage.getAttr('scaleY');
 			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
 		}
 	});
@@ -230,11 +281,6 @@ jQuery(function() {
 	// 	}
 	// 	// console.log($el.data('type'));
 	// });
-
-	var maxStageWidth = 800;
-	var maxStageHeight = 400;
-	var maxPageWidth = 900;
-	var maxPageHeight = 500;
 
 	// Check to see if window is less than desired width and calls sizing functions
 	function setStageWidth() {
@@ -352,100 +398,100 @@ jQuery(function() {
 	// }
 
 	// dodati i za touchdown
-	stage.getContainer().addEventListener('mousedown', function(e) {
-		if($addingWhat.html() === 'text') {
-			var text = window.prompt("Please enter text", "");
-			if(text != null) {
-				var id = 'text' + Math.random();
+	// stage.getContainer().addEventListener('mousedown', function(e) {
+	// 	if($addingWhat.html() === 'text') {
+	// 		var text = window.prompt("Please enter text", "");
+	// 		if(text != null) {
+	// 			var id = 'text' + Math.random();
 
-				addText(e.pageX, e.pageY, text, id);
+	// 			addText(e.pageX, e.pageY, text, id);
 				
-				socket.emit('createElement', { 
-					x: e.pageX,
-					y: e.pageY,
-					type: 'text',
-					text: text,
-					id: id
-				});
-			}
-		} else if($addingWhat.html() === 'image') {
-			$('#imageUploadModal').modal({
+	// 			socket.emit('createElement', { 
+	// 				x: e.pageX,
+	// 				y: e.pageY,
+	// 				type: 'text',
+	// 				text: text,
+	// 				id: id
+	// 			});
+	// 		}
+	// 	} else if($addingWhat.html() === 'image') {
+	// 		$('#imageUploadModal').modal({
 
-			});
+	// 		});
 
-			var timer;
-			timer = setInterval(function() {
-				if($('#canvasPhotoInput').val() !== '') {
-					clearInterval(timer);
-					$('#imageUploadForm').submit();
-				}
-			}, 500);
+	// 		var timer;
+	// 		timer = setInterval(function() {
+	// 			if($('#canvasPhotoInput').val() !== '') {
+	// 				clearInterval(timer);
+	// 				$('#imageUploadForm').submit();
+	// 			}
+	// 		}, 500);
 
-			$('#imageUploadForm').submit(function(e) {
-				e.preventDefault();
+	// 		$('#imageUploadForm').submit(function(e) {
+	// 			e.preventDefault();
 
-				$(this).ajaxSubmit({ 
-					error: function(xhr) {
-						$('#canvasPhotoInput').val('');
-						console.log("ERROR uploading file");
-					},
+	// 			$(this).ajaxSubmit({ 
+	// 				error: function(xhr) {
+	// 					$('#canvasPhotoInput').val('');
+	// 					console.log("ERROR uploading file");
+	// 				},
 
-					success: function(response) {
-						$('#canvasPhotoInput').val('');
-						if(response.error) {
-							console.log("ERROR from server while uploading file");
-							return;
-						}
+	// 				success: function(response) {
+	// 					$('#canvasPhotoInput').val('');
+	// 					if(response.error) {
+	// 						console.log("ERROR from server while uploading file");
+	// 						return;
+	// 					}
 
-						var imageUrl = response.path;
-						console.log(imageUrl);
-					  // var imageObj = new Image();
-					  // imageObj.onload = function() {
-						 //  var image = new Kinetic.Image({
-							//   x: e.pageX,
-							//   y: e.pageY,
-							//   image: imageObj,
-							//   width: 50,
-							//   height: 50,
-						 //  });
+	// 					var imageUrl = response.path;
+	// 					console.log(imageUrl);
+	// 				  // var imageObj = new Image();
+	// 				  // imageObj.onload = function() {
+	// 					 //  var image = new Kinetic.Image({
+	// 						//   x: e.pageX,
+	// 						//   y: e.pageY,
+	// 						//   image: imageObj,
+	// 						//   width: 50,
+	// 						//   height: 50,
+	// 					 //  });
 						  
-						 //  layer.add(image);
-						 //  layer.draw();
-					  // }
-					  // imageObj.src = imageUrl;
+	// 					 //  layer.add(image);
+	// 					 //  layer.draw();
+	// 				  // }
+	// 				  // imageObj.src = imageUrl;
 
-					}
-				});
-			});
+	// 				}
+	// 			});
+	// 		});
 
-			// filepicker.pick({
-			//     mimetypes: ['image/*'],
-			//     container: 'window',
-			//   },
-			//   function(InkBlob){
-			// 	  console.log(InkBlob.url);
-			// 	  var imageObj = new Image();
-			// 	  imageObj.onload = function() {
-			// 		  var image = new Kinetic.Image({
-			// 			  x: e.pageX,
-			// 			  y: e.pageY,
-			// 			  image: imageObj,
-			// 			  width: 50,
-			// 			  height: 50,
-			// 		  });
+	// 		// filepicker.pick({
+	// 		//     mimetypes: ['image/*'],
+	// 		//     container: 'window',
+	// 		//   },
+	// 		//   function(InkBlob){
+	// 		// 	  console.log(InkBlob.url);
+	// 		// 	  var imageObj = new Image();
+	// 		// 	  imageObj.onload = function() {
+	// 		// 		  var image = new Kinetic.Image({
+	// 		// 			  x: e.pageX,
+	// 		// 			  y: e.pageY,
+	// 		// 			  image: imageObj,
+	// 		// 			  width: 50,
+	// 		// 			  height: 50,
+	// 		// 		  });
 					  
-			// 		  layer.add(image);
-			// 		  layer.draw();
-			// 	  }
-			// 	  imageObj.src = InkBlob.url;
-			//     // console.log(JSON.stringify(InkBlob));
-			//   },
-			//   function(FPError){
-			//     console.log(FPError.toString());
-			//   }
-			// );
-		}
+	// 		// 		  layer.add(image);
+	// 		// 		  layer.draw();
+	// 		// 	  }
+	// 		// 	  imageObj.src = InkBlob.url;
+	// 		//     // console.log(JSON.stringify(InkBlob));
+	// 		//   },
+	// 		//   function(FPError){
+	// 		//     console.log(FPError.toString());
+	// 		//   }
+	// 		// );
+	// 	}
 
-	});
+	// });
 
 });		

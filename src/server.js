@@ -11,7 +11,9 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     jwt = require('jsonwebtoken'),
     socketioJwt = require('socketio-jwt'),
-    expressJwt = require('express-jwt');
+    expressJwt = require('express-jwt')
+    path = require('path'),
+    fs = require('fs');
 
 app.use('/media', express.static(__dirname + '/media'));
 app.use('/js', express.static(__dirname + '/js'));
@@ -31,15 +33,19 @@ mongoose.connect('mongodb://localhost/smartboard', function(err) {
 });
 
 app.post('/api/images', function(req, res) {
-  var form = new multiparty.Form();
+  var form = new multiparty.Form({ uploadDir: __dirname + "/media/uploads"});
 
   form.parse(req, function(err, fields, files) {
-    res.writeHead(200, {'content-type': 'text/plain'});
-    res.write('received upload:\n\n');
-    res.end(util.inspect({fields: fields, files: files}));
+    console.log(files);
+    console.log(files.canvasPhoto);
+
+    var file = files.canvasPhoto[0];
+    var fileName = path.basename(file.path);
+
+    res.json({ success: true, path: 'media/uploads/' + fileName});
   });
 
-  return;	
+  return;
 });
 
 app.post('/api/login', function(req, res) {
