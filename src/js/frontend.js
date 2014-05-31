@@ -12,6 +12,8 @@ function BoardWidget(id, x, y) {
 function TextWidget(id, x, y, text) {
 	this.base = BoardWidget;
 	this.base(id, x, y);
+
+	this.text = text;
 }
 TextWidget.prototype = new BoardWidget;
 
@@ -65,9 +67,7 @@ function ImageWidget(id, x, y, src) {
 }
 ImageWidget.prototype = new BoardWidget;
 function ImageWidgetCreator(x, y) {
-	$('#imageUploadModal').modal({
-
-	});
+	$('#imageUploadModal').modal('show');
 
 	// var timer;
 	// timer = setInterval(function() {
@@ -88,6 +88,7 @@ function ImageWidgetCreator(x, y) {
 
 			success: function(response) {
 				$('#canvasPhotoInput').val('');
+				$('#imageUploadModal').modal('hide');
 				if(response.error) {
 					console.log("ERROR from server while uploading file");
 					return;
@@ -95,20 +96,22 @@ function ImageWidgetCreator(x, y) {
 
 				var imageUrl = response.path;
 				console.log(imageUrl);
-			  // var imageObj = new Image();
-			  // imageObj.onload = function() {
-				 //  var image = new Kinetic.Image({
-					//   x: e.pageX,
-					//   y: e.pageY,
-					//   image: imageObj,
-					//   width: 50,
-					//   height: 50,
-				 //  });
+
+			  var imageObj = new Image();
+			  imageObj.onload = function() {
+				  var image = new Kinetic.Image({
+					  x: x,
+					  y: y,
+					  image: imageObj,
+					  width: 50,
+					  height: 50,
+					  draggable: true,
+				  });
 				  
-				 //  layer.add(image);
-				 //  layer.draw();
-			  // }
-			  // imageObj.src = imageUrl;
+				  layer.add(image);
+				  layer.draw();
+			  }
+			  imageObj.src = imageUrl;
 
 			}
 		});
