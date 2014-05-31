@@ -2,13 +2,15 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10,
-    Board = require('./board-model');
+    Board = require('./board-model'),
+    Widget = require('./widget-model');
 
 var UserSchema = new Schema({
     username: { type: String, required: true, index: { unique: true } },
     password: { type: String, required: true },
     administers: [{ type: Schema.ObjectId, ref: 'Board' }],
     boards: [{ type: Schema.ObjectId, ref: 'Board' }],
+    widgets: [{ type: Schema.ObjectId, ref: 'Widget' }],
 });
 
 UserSchema.pre('save', function(next) {

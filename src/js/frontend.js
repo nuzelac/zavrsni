@@ -148,26 +148,19 @@ jQuery(function() {
 	function setStageWidth() {
 			// console.log("pozz");
 	    if (window.innerWidth < maxPageWidth) {
-
 	        resizeStage();
-
 	    } else {
-
 	        maxStageSize();
-
 	    };
 	};
 
 	 // Sets scale and dimensions of stage in relation to window size
   function resizeStage() {
-
      var horizScalePercentage = window.innerWidth / maxPageWidth; 
      var vertiScalePercentage = window.innerHeight/ maxPageHeight; 
 
      var scalePercentage = Math.min(horizScalePercentage, vertiScalePercentage);
 
-     // stage.setAttr('scaleX', horizScalePercentage );
-     // stage.setAttr('scaleY', vertiScalePercentage );
      stage.setAttr('scaleX', scalePercentage );
      stage.setAttr('scaleY', scalePercentage );
 
@@ -237,7 +230,7 @@ jQuery(function() {
 	var layer = new Kinetic.Layer();
 	stage.add(layer);
 
-	addText(100, 100, "Pozdrav", "1");
+	// addText(100, 100, "Pozdrav", "1");
 
 	function addText(x, y, text, id) {
 		var kineticText = new Kinetic.Text({
@@ -247,7 +240,7 @@ jQuery(function() {
 			fontSize: 30,
 			fontFamily: 'Calibri',
 			fill: 'green',
-			draggable: false,
+			draggable: true,
 			id: id
 		});
 
