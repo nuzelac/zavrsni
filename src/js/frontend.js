@@ -197,9 +197,9 @@ jQuery(function() {
 
 	$('#container').droppable({
 		drop: function (ev, ui) {
-			console.log(ui.offset);
-			console.log(ui.position);
-			var widget = WidgetCreator(ui.draggable.data('tool-type'), ui.position.left, ui.position.top+16);
+			var x = ui.position.left;
+			var y = ui.position.top+16;
+			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
 		}
 	});
 
