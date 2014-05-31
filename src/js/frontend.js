@@ -158,6 +158,8 @@ jQuery(function() {
   function resizeStage() {
      var horizScalePercentage = window.innerWidth / maxPageWidth; 
      var vertiScalePercentage = window.innerHeight/ maxPageHeight; 
+		 // var horizScalePercentage = $('#container-holder').width()  / maxPageWidth; 
+     // var vertiScalePercentage = $('#container-holder').height() / maxPageHeight; 
 
      var scalePercentage = Math.min(horizScalePercentage, vertiScalePercentage);
 
