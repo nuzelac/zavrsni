@@ -102,20 +102,15 @@ jQuery(function() {
 		$.get('/api/boards/requests')
 			.success(function(data) {
 				$('#join-request-list').empty();
-				console.log(data);
-				// data.boards.forEach(function(board) {
-				// 	var html = "<li>";
-				// 	html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
-				// 	if(board.user) {
-				//   	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
-				// 	} else if(board.requested) {
-				// 		html += "Access requested";
-				// 	} else {
-				// 		html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='request-board-link'>Request access</a>";
-				// 	}
-				// 	html += "</li>";
-				// 	$('#existing-board-list').append(html);
-				// });
+				data.requests.forEach(function(request) {
+					var html = "<li>";
+					html += "User <strong>" + request.user.username + "</strong> wants to join board <strong>" + request.board.topic + "</strong> "
+					html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='approve-request-link'>[OK]</a>";
+					html += " / ";
+					html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='decline-request-link'>[Cancel]</a>";
+					html += "</li>";
+					$('#join-request-list').append(html);
+				});
 
 			})
 			.fail(function(data) {
