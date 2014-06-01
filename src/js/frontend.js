@@ -4,26 +4,25 @@ var maxStageHeight = 400;
 var maxPageWidth = 900;
 var maxPageHeight = 500;
 
-function newTextWidget(data) {
+var moveElementEvent = function(e) {
+	console.log(e);
+	socket.emit('moveElement', {
+		x: e.target.getX(),
+		y: e.target.getY(),
+		id: e.target.id(),
+		room: boardId,
+	})
+}
+
+function newTextWidget(widget, data) {
+	data.x = widget.x;
+	data.y = widget.y;
+	data.id = widget._id;
+
 	var kineticText = new Kinetic.Text(data);
 
-	// kineticText.on('dragstart dragmove dragend', function(e) {
-	// 	// console.log(e);
-	// 	socket.emit('moveElement', {
-	// 		x: e.clientX,
-	// 		y: e.clientY,
-	// 		id: id
-	// 	})
-	// });
+	kineticText.on('dragstart dragmove dragend', moveElementEvent);
 	
-	// socket.emit('createElement', { 
-	// 	x: e.pageX,
-	// 	y: e.pageY,
-	// 	type: 'text',
-	// 	text: text,
-	// 	id: id
-	// });	
-
 	layer.add(kineticText);
 	layer.draw();				
 }
@@ -33,8 +32,6 @@ function TextWidgetCreator(x, y) {
 	if(text == null) return null;
 
 	var data = {
-		x: x,
-		y: y,
 		text: text,
 		fontSize: 30,
 		fontFamily: 'Calibri',
@@ -44,14 +41,13 @@ function TextWidgetCreator(x, y) {
 
 	$.post('/api/boards/' + boardId + '/widgets', {
 		type: 'Text',
-		data: data
+		x: x,
+		y: y,
+		data: data,
 	}).success(function(data) {
 		if(data.success === true) {
 			var widget = data.widget;
 			var data = JSON.parse(widget.data);
-			data.id = widget._id;
-			data.x = widget.x;
-			data.y = widget.y;
 			newTextWidget(data);
 		} else {
 			alert(data.error);
@@ -61,10 +57,11 @@ function TextWidgetCreator(x, y) {
 	});
 }
 
-function TextWidgetLoader(data) {
+function TextWidgetLoader(widget, data) {
 	console.log("creating text widget with data:");
+	console.log(widget);
 	console.log(data);
-	newTextWidget(data);
+	newTextWidget(widget, data);
 }
 
 function WidgetCreator(name) {
@@ -79,24 +76,40 @@ function WidgetLoader(name) {
 	return self[name + "WidgetLoader"].apply(this, args);	
 }
 
-function newImageWidget(id, x, y, src) {
+function newImageWidget(widget, data) {
+	var group = new Kinetic.Group({
+		x: widget.x,
+		y: widget.y,
+		draggable: true,
+	  id: widget._id
+	});
+  layer.add(group);
+
+  var image = new Kinetic.Image({
+	  x: 0,
+	  y: 0,
+	  image: data.imageObj,
+	  width: widget.width,
+	  height: widget.height,
+	  name: "image",
+  });
+
+  group.add(image);
+  addAnchor(group, 0, 0, "topLeft");
+  addAnchor(group, widget.width, 0, "topRight");
+  addAnchor(group, widget.width, widget.height, "bottomRight");
+  addAnchor(group, 0, widget.height, "bottomLeft");
+
+  group.moveToBottom();
+  layer.draw();
 }
 
 function ImageWidgetCreator(x, y) {
-
 	$('#imageUploadModal').on('hidden.bs.modal', function() {
 		$('#imageUploadForm').off('submit');
 	});
 
 	$('#imageUploadModal').modal('show');
-
-	// var timer;
-	// timer = setInterval(function() {
-	// 	if($('#canvasPhotoInput').val() !== '') {
-	// 		clearInterval(timer);
-	// 		$('#imageUploadForm').submit();
-	// 	}
-	// }, 500);
 
 	$('#imageUploadForm').submit(function(e) {
 		e.preventDefault();
@@ -111,7 +124,7 @@ function ImageWidgetCreator(x, y) {
 				$('#canvasPhotoInput').val('');
 				$('#imageUploadModal').modal('hide');
 				if(response.error) {
-					console.log("ERROR from server while uploading file");
+					alert("ERROR from server while uploading file");
 					return;
 				}
 
@@ -120,13 +133,6 @@ function ImageWidgetCreator(x, y) {
 
 			  var imageObj = new Image();
 			  imageObj.onload = function() {
-			  	var group = new Kinetic.Group({
-			  		x: x,
-			  		y: y,
-			  		draggable: true
-			  	});
-				  layer.add(group);
-
 				  var maxdim = 100;
 				  var ratio;
 				  if(imageObj.width <= maxdim && imageObj.height <= maxdim) {
@@ -137,84 +143,96 @@ function ImageWidgetCreator(x, y) {
 				  var width = imageObj.width / ratio;
 				  var height = imageObj.height / ratio;
 
+					var data = {
+			  		src: response.path,
+					}
 
-				  var image = new Kinetic.Image({
-					  x: 0,
-					  y: 0,
-					  image: imageObj,
-					  width: width,
-					  height: height,
-					  // draggable: true,
-					  name: "image",
-				  });
+					$.post('/api/boards/' + boardId + '/widgets', {
+						type: 'Image',
+						x: x,
+						y: y,
+						width: width,
+						height: height,
+						data: data
+					}).success(function(data) {
+						if(data.success === true) {
+							var widget = data.widget;
+							var data = JSON.parse(widget.data);
+							delete widget.data;
 
-
-				  group.add(image);
-				  addAnchor(group, 0, 0, "topLeft");
-				  addAnchor(group, width, 0, "topRight");
-				  addAnchor(group, width, height, "bottomRight");
-				  addAnchor(group, 0, height, "bottomLeft");
-
-				  group.moveToBottom();
-				  layer.draw();
+							data.imageObj = imageObj;
+							newImageWidget(widget, data);
+						} else {
+							alert(data.error);
+						}
+					}).fail(function(data) {
+						alert("Error! Please try again later");
+					});
 			  }
-			  imageObj.src = imageUrl;
-
+			  imageObj.src = imageUrl;					
 			}
 		});
 	});
 }
 
-function newLinkWidget(id, x, y, href) {
+function ImageWidgetLoader(widget, data) {
+	console.log("creating image widget");
+	console.log(widget);
+	console.log(data);
+
+	var imageUrl = data.src;
+  var imageObj = new Image();
+  imageObj.onload = function() {
+		data.imageObj = imageObj;
+		newImageWidget(widget, data);
+  }
+  imageObj.src = imageUrl;		
 }
 
-function LinkWidgetCreator(x, y) {
-	var link = window.prompt("Please enter the link", "http://");
-	if(link == null) return null;
 
-	var id = 'link' + Math.random();
-
-	var kineticText = new Kinetic.Text({
-		x: x,
-		y: y,
-		text: link,
-		fontSize: 30,
-		fontFamily: 'Calibri',
-		fill: 'blue',
-		draggable: true,
-		id: id
-	});
-
-	kineticText.on('dblclick dbltap', function(e) {
-		var url = e.target.text();
-		window.open(url, '_blank');
-	});
-
-	// kineticText.on('dragstart dragmove dragend', function(e) {
-	// 	// console.log(e);
-	// 	socket.emit('moveElement', {
-	// 		x: e.clientX,
-	// 		y: e.clientY,
-	// 		id: id
-	// 	})
-	// });
-	
-	layer.add(kineticText);
-	layer.draw();
-		
-	// socket.emit('createElement', { 
-	// 	x: e.pageX,
-	// 	y: e.pageY,
-	// 	type: 'text',
-	// 	text: text,
-	// 	id: id
-	// });
-}
-// function VideoWidget(x, y) {
-// 	this.base = BoardWidget;
-// 	this.base(x, y);		
+// function newLinkWidget(id, x, y, href) {
 // }
-// VideoWidget.prototype = new BoardWidget;
+
+// function LinkWidgetCreator(x, y) {
+// 	var link = window.prompt("Please enter the link", "http://");
+// 	if(link == null) return null;
+
+// 	var id = 'link' + Math.random();
+
+// 	var kineticText = new Kinetic.Text({
+// 		x: x,
+// 		y: y,
+// 		text: link,
+// 		fontSize: 30,
+// 		fontFamily: 'Calibri',
+// 		fill: 'blue',
+// 		draggable: true,
+// 		id: id
+// 	});
+
+// 	kineticText.on('dblclick dbltap', function(e) {
+// 		var url = e.target.text();
+// 		window.open(url, '_blank');
+// 	});
+
+// 	// kineticText.on('dragstart dragmove dragend', function(e) {
+// 	// 	// console.log(e);
+// 	// 	socket.emit('moveElement', {
+// 	// 		x: e.clientX,
+// 	// 		y: e.clientY,
+// 	// 		id: id
+// 	// 	})
+// 	// });
+	
+// 	layer.add(kineticText);
+// 	layer.draw();
+		
+// }
+// // function VideoWidget(x, y) {
+// // 	this.base = BoardWidget;
+// // 	this.base(x, y);		
+// // }
+// // VideoWidget.prototype = new BoardWidget;
 
 
 jQuery(function() {
@@ -246,9 +264,8 @@ jQuery(function() {
 	var loadWidget = function(widget) {
 		if('type' in widget) {
 			var data = JSON.parse(widget.data);
-			data.x = widget.x;
-			data.y = widget.y;
-			WidgetLoader(widget.type, data);
+			delete(widget.data);
+			WidgetLoader(widget.type, widget, data);
 		}		
 	}
 

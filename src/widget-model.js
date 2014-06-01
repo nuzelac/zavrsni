@@ -8,6 +8,8 @@ var WidgetSchema = new Schema({
 		type: { type: String, required: true },
 		x: { type: Number, required: true },
 		y: { type: Number, required: true },
+		width: Number,
+		height: Number,
     data: { type: String, required: true },
     board: { type: Schema.ObjectId, ref: 'Board', childPath: 'widgets' },
     user: { type: Schema.ObjectId, ref: 'User', childPath: 'widgets' },

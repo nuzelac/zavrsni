@@ -159,15 +159,12 @@ app.post('/api/boards/:id/widgets',
         if(err) res.json({ success: false, error: err });
         if(board.users.indexOf(user._id) === -1) res.json({ success: false, error: "User not authorized to view the board" });
       
-        var x = req.body.data.x;
-        var y = req.body.data.y;
-        delete req.body.data.x;
-        delete req.body.data.y;
-
         var widget = new Widget({ 
           type: req.body.type,
-          x: x,
-          y: y,
+          x: req.body.x,
+          y: req.body.y,
+          width: req.body.width || null,
+          height: req.body.height || null,
           data: JSON.stringify(req.body.data),
           board: board._id,
           user: user._id,
@@ -228,15 +225,10 @@ sio.sockets.on('connection', function(socket) {
     console.log("--- subscribe end ---");
   });
 
-  socket.on('createElement', function(data) {
-		console.log('createElement');
-		console.log(data);
-		socket.broadcast.emit('createElement', data);
-	});
-
 	socket.on('moveElement', function(data) {
 		console.log('moveElement');
 		console.log(data);
-		socket.broadcast.emit('moveElement', data);
+    socket.broadcast.to(data.room).emit('moveElement', data);
+		// socket.broadcast.emit('moveElement', data);
 	});
 });
