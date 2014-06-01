@@ -355,6 +355,9 @@ jQuery(function() {
 			var x = (ui.position.left) / stage.getAttr('scaleX');
 			var y = (ui.position.top+16) / stage.getAttr('scaleY');
 			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
+
+			console.log("intersection");
+			console.log(stage.getIntersection({ x: x, y: y }));
 		}
 	});
 
