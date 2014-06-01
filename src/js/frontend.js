@@ -4,35 +4,8 @@ var maxStageHeight = 400;
 var maxPageWidth = 900;
 var maxPageHeight = 500;
 
-function BoardWidget(id, x, y) {
-	this.x = x || 0;
-	this.y = y || 0;
-}
-
-function TextWidget(id, x, y, text) {
-	this.base = BoardWidget;
-	this.base(id, x, y);
-
-	this.text = text;
-}
-TextWidget.prototype = new BoardWidget;
-
-function TextWidgetCreator(x, y) {
-	var text = window.prompt("Please enter text", "");
-	if(text == null) return null;
-
-	var id = 'text' + Math.random();
-
-	var kineticText = new Kinetic.Text({
-		x: x,
-		y: y,
-		text: text,
-		fontSize: 30,
-		fontFamily: 'Calibri',
-		fill: 'green',
-		draggable: true,
-		id: id
-	});
+function newTextWidget(data) {
+	var kineticText = new Kinetic.Text(data);
 
 	// kineticText.on('dragstart dragmove dragend', function(e) {
 	// 	// console.log(e);
@@ -43,16 +16,55 @@ function TextWidgetCreator(x, y) {
 	// 	})
 	// });
 	
-	layer.add(kineticText);
-	layer.draw();
-		
 	// socket.emit('createElement', { 
 	// 	x: e.pageX,
 	// 	y: e.pageY,
 	// 	type: 'text',
 	// 	text: text,
 	// 	id: id
-	// });
+	// });	
+
+	layer.add(kineticText);
+	layer.draw();				
+}
+
+function TextWidgetCreator(x, y) {
+	var text = window.prompt("Please enter text", "");
+	if(text == null) return null;
+
+	var data = {
+		x: x,
+		y: y,
+		text: text,
+		fontSize: 30,
+		fontFamily: 'Calibri',
+		fill: 'green',
+		draggable: true,
+	};
+
+	$.post('/api/boards/' + boardId + '/widgets', {
+		type: 'Text',
+		data: data
+	}).success(function(data) {
+		if(data.success === true) {
+			var widget = data.widget;
+			var data = JSON.parse(widget.data);
+			data.id = widget._id;
+			data.x = widget.x;
+			data.y = widget.y;
+			newTextWidget(data);
+		} else {
+			alert(data.error);
+		}
+	}).fail(function(data) {
+		alert("Error! Please try again later");
+	});
+}
+
+function TextWidgetLoader(data) {
+	console.log("creating text widget with data:");
+	console.log(data);
+	newTextWidget(data);
 }
 
 function WidgetCreator(name) {
@@ -61,11 +73,15 @@ function WidgetCreator(name) {
 	return self[name + "WidgetCreator"].apply(this, args);
 }
 
-function ImageWidget(id, x, y, src) {
-	this.base = BoardWidget;
-	this.base(x, y);		
+function WidgetLoader(name) {
+	var args = Array.prototype.slice.call(arguments);
+	args.shift();
+	return self[name + "WidgetLoader"].apply(this, args);	
 }
-ImageWidget.prototype = new BoardWidget;
+
+function newImageWidget(id, x, y, src) {
+}
+
 function ImageWidgetCreator(x, y) {
 
 	$('#imageUploadModal').on('hidden.bs.modal', function() {
@@ -149,13 +165,8 @@ function ImageWidgetCreator(x, y) {
 	});
 }
 
-function LinkWidget(id, x, y, href) {
-	this.base = BoardWidget;
-	this.base(id, x, y);
-
-	this.href = href;
+function newLinkWidget(id, x, y, href) {
 }
-LinkWidget.prototype = new BoardWidget;
 
 function LinkWidgetCreator(x, y) {
 	var link = window.prompt("Please enter the link", "http://");
@@ -213,7 +224,7 @@ jQuery(function() {
 		$('#mainMenu').show();
 	};
 
-	var transitionToBoard = function() {
+	var transitionToBoard = function(data) {
 		$('#mainMenu').hide();
 		$('#board').show();
 	}
@@ -232,6 +243,21 @@ jQuery(function() {
 			});
 	}
 
+	var loadWidget = function(widget) {
+		if('type' in widget) {
+			var data = JSON.parse(widget.data);
+			data.x = widget.x;
+			data.y = widget.y;
+			WidgetLoader(widget.type, data);
+		}		
+	}
+
+	var loadWidgets = function(widgets) {
+		widgets.forEach(function(widget) {
+			loadWidget(widget);
+		});
+	};
+
 	var setupSocketIO = function(jwtoken) {
 		socket = io.connect('http://localhost:4000', {
 			query: 'token=' + jwtoken
@@ -240,6 +266,13 @@ jQuery(function() {
 		socket.on('newBoard', function(data) {
 			loadBoards();
 		})
+
+		socket.on('newElement', function(widget) {
+			if(stage.find('#' + widget._id).length === 0) {
+				console.log("loading newElement");
+				loadWidget(widget);
+			}
+		});
 
 		socket.on('createElement', function(data) {
 			console.log(data);
@@ -305,10 +338,13 @@ jQuery(function() {
 	});
 
 	$(document).on('click', '.join-board-link', function(e) {
-		console.log("bok");
-		$.get('/api/boards/' + $(e.target).data('board-id'))
+		var id = $(e.target).data('board-id');
+		$.get('/api/boards/' + id)
 				.success(function(data) {
-					console.log("loaded board...");
+					boardId = id;
+					socket.emit("subscribe", { room: id });
+					console.log(data.widgets);
+					loadWidgets(data.widgets);
 					transitionToBoard(data);
 				})
 				.fail(function(data) {

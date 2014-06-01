@@ -7,7 +7,8 @@ var express = require('express'),
     util = require('util'),
     mongoose = require('mongoose'),
     User = require('./user-model'),
-    Board = require('./board-model'),
+    Board = require('./board-model')
+    Widget = require('./widget-model'),
     bodyParser = require('body-parser'),
     jwt = require('jsonwebtoken'),
     socketioJwt = require('socketio-jwt'),
@@ -128,9 +129,59 @@ app.get('/api/boards',
 app.get('/api/boards/:id',
   expressJwt({ secret: jwtSecret }),
   function(req, res) {
-    console.log('board id' + req.params.id);
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
 
-    res.json("ok");
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({ success: false, error: err });
+        if(board.users.indexOf(user._id) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+      
+        Widget.find({
+          '_id': { $in: board.widgets }
+        }, function(err, widgets) {
+          if(err) res.json({ success: false, error: err });
+
+          res.send({ success:true, widgets: widgets });
+        });
+
+      });      
+    });
+  }
+);
+
+app.post('/api/boards/:id/widgets',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({ success: false, error: err });
+        if(board.users.indexOf(user._id) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+      
+        var x = req.body.data.x;
+        var y = req.body.data.y;
+        delete req.body.data.x;
+        delete req.body.data.y;
+
+        var widget = new Widget({ 
+          type: req.body.type,
+          x: x,
+          y: y,
+          data: JSON.stringify(req.body.data),
+          board: board._id,
+          user: user._id,
+        });
+
+        widget.save(function(err) {
+          if(err) res.json({ success: false, error: err });
+
+          sio.sockets.in(board._id).emit('newElement', widget);
+          res.json({ success: true, widget: widget });
+        });
+
+      });      
+    });
   }
 );
 
@@ -169,6 +220,14 @@ sio.sockets.on('connection', function(socket) {
   console.log(socket.handshake.decoded_token);
   // console.log(socket.handshake.decoded_token.email, 'connected');  
 	
+  socket.on('subscribe', function(data) {
+    console.log("--- subscribe ---");
+    console.log(socket.handshake.decoded_token);
+    console.log(data.room);
+    socket.join(data.room);
+    console.log("--- subscribe end ---");
+  });
+
   socket.on('createElement', function(data) {
 		console.log('createElement');
 		console.log(data);
