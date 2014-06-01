@@ -9,12 +9,14 @@ var express = require('express'),
     User = require('./user-model'),
     Board = require('./board-model')
     Widget = require('./widget-model'),
+    JoinRequest = require('./join-request-model'),
     bodyParser = require('body-parser'),
     jwt = require('jsonwebtoken'),
     socketioJwt = require('socketio-jwt'),
     expressJwt = require('express-jwt')
     path = require('path'),
-    fs = require('fs');
+    fs = require('fs')
+    _ = require('underscore');
 
 app.use('/media', express.static(__dirname + '/media'));
 app.use('/js', express.static(__dirname + '/js'));
@@ -109,18 +111,54 @@ app.get('/api/boards',
     User.findOne({ _id: req.user._id }, function(err, user) {
       if(err) res.json({success: false, error: err});
 
-      Board.find({}, function(err, boards) {
-        var userBoards = [];
-        boards.forEach(function(board) {
-          userBoards.push({
-            _id: board._id,
-            topic: board.topic,
-            user: (board.users.indexOf(req.user._id) !== -1),
-            admin: (board.admins.indexOf(req.user._id) !== -1),
+      JoinRequest.find({ user: user._id }, function(err, requests) {
+        Board.find({}, function(err, boards) {
+          var userBoards = [];
+          boards.forEach(function(board) {
+            var isUser = (board.users.indexOf(req.user._id) !== -1);
+
+            userBoards.push({
+              _id: board._id,
+              topic: board.topic,
+              user: isUser,
+              admin: (board.admins.indexOf(req.user._id) !== -1),
+              requested: !isUser && _.some(requests, function(obj) { return board.id == obj.board; }),
+            });
           });
+
+          res.send({ success:true, boards: userBoards });
+        });
+      });
+    });
+  }
+);
+
+app.get('/api/boards/requests',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.find({ admins: user._id }, function(err, boards) {
+        if(err) res.json({success: false, error: err});
+
+        JoinRequest.find({
+          'board': { $in: boards }
+        })
+        .populate({
+          path: 'user',
+          select: 'username',
+        })
+        .populate({
+          path: 'board',
+          select: 'topic',
+        })
+        .exec(function(err, requests) {
+          if(err) res.json({ success: false, error: err });
+
+          res.json({success: true, requests: requests});        
         });
 
-        res.send({ success:true, boards: userBoards });
       });
     });
   }
@@ -142,6 +180,33 @@ app.get('/api/boards/:id',
           if(err) res.json({ success: false, error: err });
 
           res.send({ success:true, widgets: widgets });
+        });
+
+      });      
+    });
+  }
+);
+
+app.post('/api/boards/:id/requests',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({ success: false, error: err });
+        if(board.users.indexOf(user._id) !== -1) res.json({ success: false, error: "User already has access to the board" });
+      
+        var joinrequest = new JoinRequest({ 
+          board: board._id,
+          user: user._id,
+        });
+
+        joinrequest.save(function(err) {
+          if(err) res.json({ success: false, error: err });
+
+          sio.sockets.emit('updateAccess');
+          res.json({ success: true });
         });
 
       });      

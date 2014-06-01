@@ -317,7 +317,17 @@ jQuery(function() {
 			.success(function(data) {
 				$('#existing-board-list').empty();
 				data.boards.forEach(function(board) {
-					$('#existing-board-list').append("<li>" + board.topic + ", user: " + board.user + ", admin: " + board.admin + " <a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a></li>");
+					var html = "<li>";
+					html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
+					if(board.user) {
+				  	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
+					} else if(board.requested) {
+						html += "Access requested";
+					} else {
+						html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='request-board-link'>Request access</a>";
+					}
+					html += "</li>";
+					$('#existing-board-list').append(html);
 				});
 
 			})
@@ -325,6 +335,32 @@ jQuery(function() {
 				alert("error loading boards");
 			});
 	}
+
+	var loadRequests = function() {
+		$.get('/api/boards/requests')
+			.success(function(data) {
+				$('#join-request-list').empty();
+				console.log(data);
+				// data.boards.forEach(function(board) {
+				// 	var html = "<li>";
+				// 	html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
+				// 	if(board.user) {
+				//   	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
+				// 	} else if(board.requested) {
+				// 		html += "Access requested";
+				// 	} else {
+				// 		html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='request-board-link'>Request access</a>";
+				// 	}
+				// 	html += "</li>";
+				// 	$('#existing-board-list').append(html);
+				// });
+
+			})
+			.fail(function(data) {
+				alert("error loading boards");
+			});
+	}
+
 
 	var loadWidget = function(widget) {
 		if('type' in widget) {
@@ -348,6 +384,11 @@ jQuery(function() {
 		socket.on('newBoard', function(data) {
 			loadBoards();
 		})
+
+		socket.on('updateAccess', function(data) {
+			loadBoards();
+			loadRequests();
+		});
 
 		socket.on('newElement', function(widget) {
 			if(stage.find('#' + widget._id).length === 0) {
@@ -426,6 +467,7 @@ jQuery(function() {
 				setupSocketIO(jwtoken);
 				transitionToMainMenu();
 				loadBoards();
+				loadRequests();
 			} else {
 				alert(data.error);
 			}
@@ -458,6 +500,16 @@ jQuery(function() {
 					console.log(data.widgets);
 					loadWidgets(data.widgets);
 					transitionToBoard(data);
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+	});
+
+	$(document).on('click', '.request-board-link', function(e) {
+		var id = $(e.target).data('board-id');
+		$.post('/api/boards/' + id + '/requests')
+				.success(function(data) {
 				})
 				.fail(function(data) {
 					alert("Error loading board");
