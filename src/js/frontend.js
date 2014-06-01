@@ -249,6 +249,8 @@ jQuery(function() {
 	});
 
 	$(document).on('click', '.join-board-link', function(e) {
+		e.preventDefault();
+
 		var id = $(e.target).data('board-id');
 		$.get('/api/boards/' + id)
 				.success(function(data) {
@@ -264,6 +266,8 @@ jQuery(function() {
 	});
 
 	$(document).on('click', '.request-board-link', function(e) {
+		e.preventDefault();
+
 		var id = $(e.target).data('board-id');
 		$.post('/api/boards/' + id + '/requests')
 				.success(function(data) {
@@ -272,6 +276,35 @@ jQuery(function() {
 					alert("Error loading board");
 				});
 	});
+
+	$(document).on('click', '.approve-request-link', function(e) {
+		e.preventDefault();
+
+		var id = $(e.target).data('request-id');
+		$.post('/api/boards/requests/' + id + '/approve')
+				.success(function(data) {
+					loadBoards();
+					loadRequests();
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+	});
+
+	$(document).on('click', '.decline-request-link', function(e) {
+		e.preventDefault();
+
+		var id = $(e.target).data('request-id');
+		$.post('/api/boards/requests/' + id + '/decline')
+				.success(function(data) {
+					loadBoards();
+					loadRequests();
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+	});
+
 
 	$('.board-tool').draggable({
 		helper: 'clone',

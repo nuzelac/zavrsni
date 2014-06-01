@@ -164,6 +164,72 @@ app.get('/api/boards/requests',
   }
 );
 
+app.post('/api/boards/requests/:id/approve',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.find({ admins: user._id }, function(err, boards) {
+        if(err) res.json({success: false, error: err});
+
+        JoinRequest.findOne({
+          '_id': req.params.id,
+          'board': { $in: boards },
+        })
+        .populate('board')
+        .populate('user')
+        .exec(function(err, request) {
+          if(err) res.json({ success: false, error: err });
+
+          if(request) {
+            request.board.users.push(request.user);
+            request.board.save(function(err) {
+              request.remove();
+              res.json({ success: true });
+            });
+
+          } else {
+            res.json({success: false, error: 'Invalid request'});        
+          }
+        });
+
+      });
+    });
+  }
+);
+
+app.post('/api/boards/requests/:id/decline',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.find({ admins: user._id }, function(err, boards) {
+        if(err) res.json({success: false, error: err});
+
+        JoinRequest.findOne({
+          '_id': req.params.id,
+          'board': { $in: boards },
+        })
+        .populate('board')
+        .populate('user')
+        .exec(function(err, request) {
+          if(err) res.json({ success: false, error: err });
+
+          if(request) {
+            request.remove();
+            res.json({ success: true });
+          } else {
+            res.json({success: false, error: 'Invalid request'});        
+          }
+        });
+
+      });
+    });
+  }
+);
+
 app.get('/api/boards/:id',
   expressJwt({ secret: jwtSecret }),
   function(req, res) {
