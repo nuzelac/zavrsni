@@ -62,11 +62,21 @@ function update(group, activeHandle) {
         width: newWidth, 
         height: newHeight
       });
+
+      var e = {
+        target: group,
+        x: imageX,
+        y: imageY,
+        width: newWidth,
+        height: newHeight,
+      }
+      resizeElementEvent(e);
   }
 }
 function addAnchor(group, x, y, name) {
   var stage = group.getStage();
   var layer = group.getLayer();
+  var image = group.get(".image")[0];
 
   var anchor = new Kinetic.Circle({
     x: x,
@@ -79,26 +89,29 @@ function addAnchor(group, x, y, name) {
     draggable: true
   });
 
-  anchor.on("dragmove", function() {
+  anchor.on("dragmove", function(e) {
     update(group, this);
     layer.draw();
   });
-  anchor.on("mousedown touchstart", function() {
+  anchor.on("mousedown touchstart", function(e) {
     group.setDraggable(false);
     this.moveToTop();
   });
-  anchor.on("dragend", function() {
+  anchor.on("dragend", function(e) {
     group.setDraggable(true);
     layer.draw();
+    saveElementData(group.id(), group.getX() + image.getX(), group.getY() + image.getY(), image.width(), image.height());
   });
   // add hover styling
-  anchor.on("mouseover", function() {
+  anchor.on("mouseover", function(e) {
+    // e.stopImmediatePropagation();
     var layer = this.getLayer();
     document.body.style.cursor = "pointer";
     this.setStrokeWidth(4);
     layer.draw();
   });
-  anchor.on("mouseout", function() {
+  anchor.on("mouseout", function(e) {
+    // e.stopImmediatePropagation();
     var layer = this.getLayer();
     document.body.style.cursor = "default";
     this.setStrokeWidth(2);

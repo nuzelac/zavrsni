@@ -5,13 +5,61 @@ var maxPageWidth = 900;
 var maxPageHeight = 500;
 
 var moveElementEvent = function(e) {
-	console.log(e);
+	var wId = e.target.id();
+	if(wId === undefined) return;
+	var x = e.target.getX();
+	var y = e.target.getY();
+
 	socket.emit('moveElement', {
-		x: e.target.getX(),
-		y: e.target.getY(),
-		id: e.target.id(),
+		x: x,
+		y: y,
+		id: wId,
+		room: boardId,
+	});
+
+	if(e.type == "dragend") {
+		saveElementData(wId, x, y)
+	}
+}
+
+var resizeElementEvent = function(e) {
+	console.log("Resizing element");
+	console.log(e);
+	var wId = e.target.id();
+	var x = e.x;
+	var y = e.y;
+	var width = e.width;
+	var height = e.height;
+
+	socket.emit('resizeElement', {
+		id: wId,
+		x: x,
+		y: y,
+		width: width,
+		height: height,
 		room: boardId,
 	})
+}
+
+var saveElementData = function(wid, x, y, width, height) {
+	$.ajax({
+		url:'/api/boards/' + boardId + '/widgets/' + wid,
+		type: 'PUT',
+		data: {
+			x: x,
+			y: y,
+			width: width || null,
+			height: height || null,
+		}
+	}).success(function(data) {
+		if(data.success === true) {
+		} else {
+			alert(data.error);
+		}
+	}).fail(function(data) {
+		alert("Error! Please try again later");
+	});
+
 }
 
 function newTextWidget(widget, data) {
@@ -48,7 +96,7 @@ function TextWidgetCreator(x, y) {
 		if(data.success === true) {
 			var widget = data.widget;
 			var data = JSON.parse(widget.data);
-			newTextWidget(data);
+			newTextWidget(widget, data);
 		} else {
 			alert(data.error);
 		}
@@ -84,6 +132,8 @@ function newImageWidget(widget, data) {
 	  id: widget._id
 	});
   layer.add(group);
+
+	group.on('dragstart dragmove dragend', moveElementEvent);
 
   var image = new Kinetic.Image({
 	  x: 0,
@@ -190,42 +240,57 @@ function ImageWidgetLoader(widget, data) {
 }
 
 
-// function newLinkWidget(id, x, y, href) {
-// }
+function newLinkWidget(widget, data) {
+	console.log("newLinkWidget");
+	data.x = widget.x;
+	data.y = widget.y;
+	data.id = widget._id;
 
-// function LinkWidgetCreator(x, y) {
-// 	var link = window.prompt("Please enter the link", "http://");
-// 	if(link == null) return null;
+	var kineticText = new Kinetic.Text(data);
+	kineticText.on('dblclick dbltap', function(e) {
+		var url = e.target.text();
+		window.open(url, '_blank');
+	});
 
-// 	var id = 'link' + Math.random();
-
-// 	var kineticText = new Kinetic.Text({
-// 		x: x,
-// 		y: y,
-// 		text: link,
-// 		fontSize: 30,
-// 		fontFamily: 'Calibri',
-// 		fill: 'blue',
-// 		draggable: true,
-// 		id: id
-// 	});
-
-// 	kineticText.on('dblclick dbltap', function(e) {
-// 		var url = e.target.text();
-// 		window.open(url, '_blank');
-// 	});
-
-// 	// kineticText.on('dragstart dragmove dragend', function(e) {
-// 	// 	// console.log(e);
-// 	// 	socket.emit('moveElement', {
-// 	// 		x: e.clientX,
-// 	// 		y: e.clientY,
-// 	// 		id: id
-// 	// 	})
-// 	// });
+	kineticText.on('dragstart dragmove dragend', moveElementEvent);
 	
-// 	layer.add(kineticText);
-// 	layer.draw();
+	layer.add(kineticText);
+	layer.draw();	
+}
+
+function LinkWidgetCreator(x, y) {
+	var link = window.prompt("Please enter link", "http://");
+	if(link == null) return null;
+
+	var data = {
+		text: link,
+		fontSize: 30,
+		fontFamily: 'Calibri',
+		fill: 'blue',
+		draggable: true,
+	};
+
+	$.post('/api/boards/' + boardId + '/widgets', {
+		type: 'Link',
+		x: x,
+		y: y,
+		data: data,
+	}).success(function(data) {
+		if(data.success === true) {
+			// var widget = data.widget;
+			// var data = JSON.parse(widget.data);
+			// newLinkWidget(widget, data);
+		} else {
+			alert(data.error);
+		}
+	}).fail(function(data) {
+		alert("Error! Please try again later");
+	});
+}
+
+function LinkWidgetLoader(widget, data) {
+	newLinkWidget(widget, data);
+}
 		
 // }
 // // function VideoWidget(x, y) {
@@ -306,6 +371,36 @@ jQuery(function() {
 			widget.setPosition({x: data.x, y: data.y});
 			layer.draw();
 		});
+
+		socket.on('resizeElement', function(data) {
+			console.log("resizing " + data.id);
+
+			var newWidth = data.width;
+			var newHeight = data.height;
+
+			var group = layer.find('#' + data.id)[0];
+			var image = group.get(".image")[0];
+			image.setPosition({x: data.x, y: data.y});
+
+      image.setSize({
+        width: newWidth, 
+        height: newHeight
+      });
+
+			var imageX = image.getX();
+			var imageY = image.getY();
+
+		  var topLeft = group.get(".topLeft")[0],
+		      topRight = group.get(".topRight")[0],
+		      bottomRight = group.get(".bottomRight")[0],
+		      bottomLeft = group.get(".bottomLeft")[0];
+
+		  topLeft.setPosition({ x: imageX, y: imageY});
+		  topRight.setPosition({ x: imageX + newWidth, y: imageY });
+		  bottomRight.setPosition({ x: imageX + newWidth, y: imageY + newHeight});
+		  bottomLeft.setPosition({ x: imageX, y: imageY + newHeight});
+			layer.draw();
+		});		
 	}
 
 	$.ajaxSetup({

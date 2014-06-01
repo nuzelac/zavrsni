@@ -182,6 +182,37 @@ app.post('/api/boards/:id/widgets',
   }
 );
 
+app.put('/api/boards/:id/widgets/:wid',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({ success: false, error: err });
+        if(board.users.indexOf(user._id) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+        if(board.widgets.indexOf(req.params.wid) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+      
+        Widget.findOne({ _id: req.params.wid }, function(err, widget) {
+          if(err) res.json({success: false, error: err });
+
+          widget.x = req.body.x;
+          widget.y = req.body.y;
+          if(req.body.width)
+            widget.width = req.body.width;
+          if(req.body.height)
+            widget.height = req.body.height;
+          widget.save(function(err) {
+            if(err) res.json({success: false, error: err });
+            res.json({ success: true });
+          });
+        });
+
+      });      
+    });
+  }
+);
+
 app.post('/api/register', function(req, res) {
   var username = req.body.username,
       password = req.body.password;
@@ -231,4 +262,10 @@ sio.sockets.on('connection', function(socket) {
     socket.broadcast.to(data.room).emit('moveElement', data);
 		// socket.broadcast.emit('moveElement', data);
 	});
+
+  socket.on('resizeElement', function(data) {
+    console.log('resizeElement');
+    console.log(data);
+    socket.broadcast.to(data.room).emit('resizeElement', data);    
+  })
 });
