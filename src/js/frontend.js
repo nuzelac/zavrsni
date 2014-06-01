@@ -1,4 +1,4 @@
-var jwtoken, socket, boardId, layer;
+var jwtoken, socket, boardId, layer, stage;
 var maxStageWidth = 800;
 var maxStageHeight = 400;
 var maxPageWidth = 900;
@@ -62,145 +62,181 @@ var saveElementData = function(wid, x, y, width, height) {
 
 }
 
-jQuery(function() {
-	var transitionToMainMenu = function() {
-		// hide login
-		$('.form-signin').hide();
-		$('#mainMenu').show();
-	};
+var transitionToMainMenu = function() {
+	// hide login
+	$('.form-signin').hide();
+	$('#mainMenu').show();
+};
 
-	var transitionToBoard = function(data) {
-		$('#mainMenu').hide();
-		$('#board').show();
-	}
+var transitionToBoard = function(data) {
+	$('#mainMenu').hide();
+	$('#board').show();
+}
 
-	var loadBoards = function() {
-		$.get('/api/boards')
-			.success(function(data) {
-				$('#existing-board-list').empty();
-				data.boards.forEach(function(board) {
-					var html = "<li>";
-					html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
-					if(board.user) {
-				  	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
-					} else if(board.requested) {
-						html += "Access requested";
-					} else {
-						html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='request-board-link'>Request access</a>";
-					}
-					html += "</li>";
-					$('#existing-board-list').append(html);
-				});
-
-			})
-			.fail(function(data) {
-				alert("error loading boards");
+var loadBoards = function() {
+	$.get('/api/boards')
+		.success(function(data) {
+			$('#existing-board-list').empty();
+			data.boards.forEach(function(board) {
+				var html = "<li>";
+				html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
+				if(board.user) {
+			  	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
+				} else if(board.requested) {
+					html += "Access requested";
+				} else {
+					html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='request-board-link'>Request access</a>";
+				}
+				html += "</li>";
+				$('#existing-board-list').append(html);
 			});
-	}
 
-	var loadRequests = function() {
-		$.get('/api/boards/requests')
-			.success(function(data) {
-				$('#join-request-list').empty();
-				data.requests.forEach(function(request) {
-					var html = "<li>";
-					html += "User <strong>" + request.user.username + "</strong> wants to join board <strong>" + request.board.topic + "</strong> "
-					html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='approve-request-link'>[OK]</a>";
-					html += " / ";
-					html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='decline-request-link'>[Cancel]</a>";
-					html += "</li>";
-					$('#join-request-list').append(html);
-				});
-
-			})
-			.fail(function(data) {
-				alert("error loading boards");
-			});
-	}
-
-
-	var loadWidget = function(widget) {
-		if('type' in widget) {
-			var data = JSON.parse(widget.data);
-			delete(widget.data);
-			WidgetLoader(widget.type, widget, data);
-		}		
-	}
-
-	var loadWidgets = function(widgets) {
-		widgets.forEach(function(widget) {
-			loadWidget(widget);
-		});
-	};
-
-	var setupSocketIO = function(jwtoken) {
-		socket = io.connect('http://localhost:4000', {
-			query: 'token=' + jwtoken
-		});
-
-		socket.on('newBoard', function(data) {
-			loadBoards();
 		})
-
-		socket.on('updateAccess', function(data) {
-			loadBoards();
-			loadRequests();
+		.fail(function(data) {
+			alert("error loading boards");
 		});
+}
 
-		socket.on('newElement', function(widget) {
-			if(stage.find('#' + widget._id).length === 0) {
-				console.log("loading newElement");
-				loadWidget(widget);
-			}
+var loadRequests = function() {
+	$.get('/api/boards/requests')
+		.success(function(data) {
+			$('#join-request-list').empty();
+			data.requests.forEach(function(request) {
+				var html = "<li>";
+				html += "User <strong>" + request.user.username + "</strong> wants to join board <strong>" + request.board.topic + "</strong> "
+				html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='approve-request-link'>[OK]</a>";
+				html += " / ";
+				html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='decline-request-link'>[Cancel]</a>";
+				html += "</li>";
+				$('#join-request-list').append(html);
+			});
+
+		})
+		.fail(function(data) {
+			alert("error loading boards");
 		});
+}
 
-		socket.on('createElement', function(data) {
-			console.log(data);
-			if(data.type === 'text') {
-				addText(data.x, data.y, data.text, data.id);
-			}
-		});
 
-		socket.on('moveElement', function(data) {
-			console.log("moving " + data.id);
+var loadWidget = function(widget) {
+	if('type' in widget) {
+		var data = JSON.parse(widget.data);
+		delete(widget.data);
+		WidgetLoader(widget.type, widget, data);
+	}		
+}
 
-			var widget = layer.find('#' + data.id)[0];
+var loadWidgets = function(widgets) {
+	widgets.forEach(function(widget) {
+		loadWidget(widget);
+	});
+};
 
-			widget.setPosition({x: data.x, y: data.y});
-			layer.draw();
-		});
+var setupSocketIO = function(jwtoken) {
+	socket = io.connect('http://localhost:4000', {
+		query: 'token=' + jwtoken
+	});
 
-		socket.on('resizeElement', function(data) {
-			console.log("resizing " + data.id);
+	socket.on('newBoard', function(data) {
+		loadBoards();
+	})
 
-			var newWidth = data.width;
-			var newHeight = data.height;
+	socket.on('updateAccess', function(data) {
+		loadBoards();
+		loadRequests();
+	});
 
-			var group = layer.find('#' + data.id)[0];
-			var image = group.get(".image")[0];
-			image.setPosition({x: data.x, y: data.y});
+	socket.on('newElement', function(widget) {
+		if(stage.find('#' + widget._id).length === 0) {
+			console.log("loading newElement");
+			loadWidget(widget);
+		}
+	});
 
-      image.setSize({
-        width: newWidth, 
-        height: newHeight
-      });
+	socket.on('createElement', function(data) {
+		console.log(data);
+		if(data.type === 'text') {
+			addText(data.x, data.y, data.text, data.id);
+		}
+	});
 
-			var imageX = image.getX();
-			var imageY = image.getY();
+	socket.on('moveElement', function(data) {
+		console.log("moving " + data.id);
 
-		  var topLeft = group.get(".topLeft")[0],
-		      topRight = group.get(".topRight")[0],
-		      bottomRight = group.get(".bottomRight")[0],
-		      bottomLeft = group.get(".bottomLeft")[0];
+		var widget = layer.find('#' + data.id)[0];
 
-		  topLeft.setPosition({ x: imageX, y: imageY});
-		  topRight.setPosition({ x: imageX + newWidth, y: imageY });
-		  bottomRight.setPosition({ x: imageX + newWidth, y: imageY + newHeight});
-		  bottomLeft.setPosition({ x: imageX, y: imageY + newHeight});
-			layer.draw();
-		});		
-	}
+		widget.setPosition({x: data.x, y: data.y});
+		layer.draw();
+	});
 
+	socket.on('resizeElement', function(data) {
+		console.log("resizing " + data.id);
+
+		var newWidth = data.width;
+		var newHeight = data.height;
+
+		var group = layer.find('#' + data.id)[0];
+		var image = group.get(".image")[0];
+		image.setPosition({x: data.x, y: data.y});
+
+    image.setSize({
+      width: newWidth, 
+      height: newHeight
+    });
+
+		var imageX = image.getX();
+		var imageY = image.getY();
+
+	  var topLeft = group.get(".topLeft")[0],
+	      topRight = group.get(".topRight")[0],
+	      bottomRight = group.get(".bottomRight")[0],
+	      bottomLeft = group.get(".bottomLeft")[0];
+
+	  topLeft.setPosition({ x: imageX, y: imageY});
+	  topRight.setPosition({ x: imageX + newWidth, y: imageY });
+	  bottomRight.setPosition({ x: imageX + newWidth, y: imageY + newHeight});
+	  bottomLeft.setPosition({ x: imageX, y: imageY + newHeight});
+		layer.draw();
+	});		
+}
+
+// Check to see if window is less than desired width and calls sizing functions
+function setStageWidth() {
+		// console.log("pozz");
+    if (window.innerWidth < maxPageWidth) {
+        resizeStage();
+    } else {
+        maxStageSize();
+    };
+};
+
+ // Sets scale and dimensions of stage in relation to window size
+function resizeStage() {
+   var horizScalePercentage = window.innerWidth / maxPageWidth; 
+   var vertiScalePercentage = window.innerHeight/ maxPageHeight; 
+	 // var horizScalePercentage = $('#container-holder').width()  / maxPageWidth; 
+   // var vertiScalePercentage = $('#container-holder').height() / maxPageHeight; 
+
+   var scalePercentage = Math.min(horizScalePercentage, vertiScalePercentage);
+
+   stage.setAttr('scaleX', scalePercentage );
+   stage.setAttr('scaleY', scalePercentage );
+
+   stage.setAttr('width', maxStageWidth * scalePercentage );
+   stage.setAttr('height', maxStageHeight * scalePercentage );
+   stage.draw();
+};
+
+//Sets scale and dimensions of stage to max settings
+function maxStageSize() {
+    stage.setAttr('scaleX', 1);
+    stage.setAttr('scaleY', 1);
+    stage.setAttr('width', maxStageWidth);
+    stage.setAttr('height', maxStageHeight);
+    stage.draw();
+};
+
+jQuery(function() {
 	$.ajaxSetup({
 	    beforeSend: function(xhr) {
 	        if (!jwtoken) return;
@@ -322,43 +358,7 @@ jQuery(function() {
 		}
 	});
 
-	// Check to see if window is less than desired width and calls sizing functions
-	function setStageWidth() {
-			// console.log("pozz");
-	    if (window.innerWidth < maxPageWidth) {
-	        resizeStage();
-	    } else {
-	        maxStageSize();
-	    };
-	};
-
-	 // Sets scale and dimensions of stage in relation to window size
-  function resizeStage() {
-     var horizScalePercentage = window.innerWidth / maxPageWidth; 
-     var vertiScalePercentage = window.innerHeight/ maxPageHeight; 
-		 // var horizScalePercentage = $('#container-holder').width()  / maxPageWidth; 
-     // var vertiScalePercentage = $('#container-holder').height() / maxPageHeight; 
-
-     var scalePercentage = Math.min(horizScalePercentage, vertiScalePercentage);
-
-     stage.setAttr('scaleX', scalePercentage );
-     stage.setAttr('scaleY', scalePercentage );
-
-     stage.setAttr('width', maxStageWidth * scalePercentage );
-     stage.setAttr('height', maxStageHeight * scalePercentage );
-     stage.draw();
-  };
-
-  //Sets scale and dimensions of stage to max settings
-  function maxStageSize() {
-      stage.setAttr('scaleX', 1);
-      stage.setAttr('scaleY', 1);
-      stage.setAttr('width', maxStageWidth);
-      stage.setAttr('height', maxStageHeight);
-      stage.draw();
-  };
-
-	var stage = new Kinetic.Stage({
+	stage = new Kinetic.Stage({
 	    container: 'container',
 	    width: maxStageWidth,
 	    height: maxStageHeight,
