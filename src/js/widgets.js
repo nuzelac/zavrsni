@@ -1,5 +1,6 @@
 
 function newTextWidget(widget, data) {
+	console.log("newTextWidget");
 	data.x = widget.x;
 	data.y = widget.y;
 	data.id = widget._id;
@@ -31,9 +32,9 @@ function TextWidgetCreator(x, y) {
 		data: data,
 	}).success(function(data) {
 		if(data.success === true) {
-			var widget = data.widget;
-			var data = JSON.parse(widget.data);
-			newTextWidget(widget, data);
+			// var widget = data.widget;
+			// var data = JSON.parse(widget.data);
+			// newTextWidget(widget, data);
 		} else {
 			alert(data.error);
 		}
@@ -143,12 +144,12 @@ function ImageWidgetCreator(x, y) {
 						data: data
 					}).success(function(data) {
 						if(data.success === true) {
-							var widget = data.widget;
-							var data = JSON.parse(widget.data);
-							delete widget.data;
+							// var widget = data.widget;
+							// var data = JSON.parse(widget.data);
+							// delete widget.data;
 
-							data.imageObj = imageObj;
-							newImageWidget(widget, data);
+							// data.imageObj = imageObj;
+							// newImageWidget(widget, data);
 						} else {
 							alert(data.error);
 						}
