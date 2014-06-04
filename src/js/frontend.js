@@ -341,12 +341,51 @@ jQuery(function() {
 				});
 	});
 
+	var lastUpdatedShape;
+	var clearStrokeOrFill = function(shape) {
+		if(!shape) return;
+
+		if(shape.getClassName() == 'Text') {
+			shape.setFill('green');
+		} else {
+			shape.stroke(null);
+		}
+		layer.draw();
+	}
 
 	$('.board-tool').draggable({
 		helper: 'clone',
 		containment: 'container',
-		// stop: function (ev, ui) {
+		start: function(ev, ui) {
+			lastUpdatedShape = null;
+		},
+		drag: function(ev, ui) {
+			console.log(ui.helper);
+			console.log($(this).data('tool-type'));
+			if($(this).data('tool-type') == 'Trash') {
+				console.log("clearStrokeOrFill");
+				clearStrokeOrFill(lastUpdatedShape);
+				lastUpdatedShape = null;				
+				var x = (ui.position.left) / stage.getAttr('scaleX');
+				var y = (ui.position.top+16) / stage.getAttr('scaleY');
+				var shape = stage.getIntersection({ x: x, y: y });
+				console.log("intersection");
+				console.log(shape);
 
+				if(shape && shape.getClassName() != 'Circle') {
+					lastUpdatedShape = shape;
+					if(shape.getClassName() == 'Text') {
+						shape.setFill('blue');
+					} else {
+						shape.stroke('blue');
+						shape.strokeWidth(5);
+					}
+					layer.draw();
+				}
+			}
+		},
+		// stop: function (ev, ui) {
+		// 		clearStrokeOrFill(lastUpdatedShape);
 		// }
 	});
 
@@ -356,8 +395,14 @@ jQuery(function() {
 			var y = (ui.position.top+16) / stage.getAttr('scaleY');
 			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
 
-			console.log("intersection");
-			console.log(stage.getIntersection({ x: x, y: y }));
+
+			// var shape = stage.getIntersection({ x: x, y: y });
+			// console.log("intersection");
+			// console.log(shape);
+
+			// shape.stroke('blue');
+			// shape.strokeWidth(20);
+			// layer.draw();
 		}
 	});
 
