@@ -1,7 +1,7 @@
 var jwtoken, socket, boardId, layer, stage;
-var maxStageWidth = 800;
+var maxStageWidth = 1000;
 var maxStageHeight = 400;
-var maxPageWidth = 900;
+var maxPageWidth = 1100;
 var maxPageHeight = 500;
 
 var moveElementEvent = function(e) {
@@ -64,9 +64,19 @@ var saveElementData = function(wid, x, y, width, height) {
 
 var transitionToMainMenu = function() {
 	// hide login
+	$('#logout-link').show();
 	$('.form-signin').hide();
 	$('#mainMenu').show();
 };
+
+var logout = function() {
+	$('#logout-link').hide();
+	$('.form-signin').show();
+	$('#mainMenu').hide();
+	$('#board').hide();
+	boardId = null;
+	token = null;
+}
 
 var transitionToBoard = function(data) {
 	$('#mainMenu').hide();
@@ -101,6 +111,11 @@ var loadRequests = function() {
 	$.get('/api/boards/requests')
 		.success(function(data) {
 			$('#join-request-list').empty();
+			if(data.requests.length > 0) {
+				$('#join-requests').show();
+			} else {
+				$('#join-requests').hide();	
+			}
 			data.requests.forEach(function(request) {
 				var html = "<li>";
 				html += "User <strong>" + request.user.username + "</strong> wants to join board <strong>" + request.board.topic + "</strong> "
@@ -315,6 +330,21 @@ jQuery(function() {
 		});
 	});
 
+	$('#go-back-to-main-menu').click(function(e) {
+		e.preventDefault();
+
+		boardId = null;
+		$('#board').hide();
+		transitionToMainMenu();
+		loadBoards();
+		loadRequests();
+	});	
+
+	$('#logout-link').click(function(e) {
+		e.preventDefault();
+		logout();
+	});
+
 	$(document).on('click', '.join-board-link', function(e) {
 		e.preventDefault();
 
@@ -322,6 +352,8 @@ jQuery(function() {
 		$.get('/api/boards/' + id)
 				.success(function(data) {
 					boardId = id;
+					layer.removeChildren();
+					layer.draw();
 					socket.emit("subscribe", { room: id });
 					console.log(data.widgets);
 					loadWidgets(data.widgets);
