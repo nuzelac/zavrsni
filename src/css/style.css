@@ -39,8 +39,12 @@ body {
   border-top-right-radius: 0;
 }
 
+.navbar {
+    margin-bottom: 0;
+}
+
 #container {
-  background-color: #C0F2FA;
-  display: inline-block;  
-  max-width: 1000px;
+  background-color: #dedede;
+  /*display: inline-block;  */
+  max-width: 1100px;
 }

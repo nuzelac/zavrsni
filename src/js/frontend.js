@@ -1,6 +1,6 @@
 var jwtoken, socket, boardId, layer, stage;
-var maxStageWidth = 1000;
-var maxStageHeight = 400;
+var maxStageWidth = 1100;
+var maxStageHeight = 450;
 var maxPageWidth = 1100;
 var maxPageHeight = 500;
 
@@ -456,7 +456,7 @@ jQuery(function() {
 				// console.log("clearStrokeOrFill");
 				clearStrokeOrFill(lastUpdatedShape);
 				lastUpdatedShape = null;				
-				var x = (ui.position.left) / stage.getAttr('scaleX');
+				var x = (ui.position.left) / stage.getAttr('scaleX') - $('#container')[0].offsetLeft;
 				var y = (ui.position.top+16) / stage.getAttr('scaleY');
 				var shape = stage.getIntersection({ x: x, y: y });
 				// console.log("intersection");
@@ -465,9 +465,9 @@ jQuery(function() {
 				if(shape && shape.getClassName() != 'Circle') {
 					lastUpdatedShape = shape;
 					if(shape.getClassName() == 'Text') {
-						shape.setFill('blue');
+						shape.setFill('red');
 					} else {
-						shape.stroke('blue');
+						shape.stroke('red');
 						shape.strokeWidth(5);
 					}
 					layer.draw();
@@ -481,7 +481,7 @@ jQuery(function() {
 
 	$('#container').droppable({
 		drop: function (ev, ui) {
-			var x = (ui.position.left) / stage.getAttr('scaleX');
+			var x = (ui.position.left) / stage.getAttr('scaleX') - $('#container')[0].offsetLeft;
 			var y = (ui.position.top+16) / stage.getAttr('scaleY');
 			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
 		}
