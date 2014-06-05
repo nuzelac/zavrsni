@@ -132,6 +132,31 @@ var loadWidgets = function(widgets) {
 	});
 };
 
+var loadDeleteRequests = function() {
+	$.get('/api/boards/' + boardId + '/deleteRequests')
+			.success(function(data) {
+				if(data.requests.length > 0) {
+					$('#delete-requests').show();
+					$('#delete-request-list').empty();
+					data.requests.forEach(function(request) {
+						var html = "<li>";
+						html += "User has requested deletion of <strong>" + WidgetToString(request.widget.type, request.widget, JSON.parse(request.widget.data)) + "</strong> "
+						html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='approve-delete-request-link'>[OK]</a>";
+						html += " / ";
+						html += "<a href='#" + request._id + "' data-request-id='" + request._id +"' class='decline-delete-request-link'>[Cancel]</a>";
+						html += "</li>";
+						$('#delete-request-list').append(html);
+					});
+
+				} else {
+					$('#delete-requests').hide();
+				}
+			})
+			.fail(function(data) {
+				alert("Error loading board");
+			});
+}
+
 var setupSocketIO = function(jwtoken) {
 	socket = io.connect('http://localhost:4000', {
 		query: 'token=' + jwtoken
@@ -146,6 +171,10 @@ var setupSocketIO = function(jwtoken) {
 		loadRequests();
 	});
 
+	socket.on('newDeleteRequest', function(widget) {
+		loadDeleteRequests();
+	});	
+
 	socket.on('newElement', function(widget) {
 		if(stage.find('#' + widget._id).length === 0) {
 			console.log("loading newElement");
@@ -153,10 +182,12 @@ var setupSocketIO = function(jwtoken) {
 		}
 	});
 
-	socket.on('createElement', function(data) {
-		console.log(data);
-		if(data.type === 'text') {
-			addText(data.x, data.y, data.text, data.id);
+	socket.on('deleteElement', function(widget) {
+		var findWidget = stage.find('#' + widget._id);
+		if(findWidget.length !== 0) {
+			console.log("deleting element " + widget._id);
+			findWidget[0].destroy();
+			layer.draw();
 		}
 	});
 
@@ -294,6 +325,7 @@ jQuery(function() {
 					socket.emit("subscribe", { room: id });
 					console.log(data.widgets);
 					loadWidgets(data.widgets);
+					loadDeleteRequests();
 					transitionToBoard(data);
 				})
 				.fail(function(data) {
@@ -341,6 +373,32 @@ jQuery(function() {
 				});
 	});
 
+	$(document).on('click', '.approve-delete-request-link', function(e) {
+		e.preventDefault();
+
+		var id = $(e.target).data('request-id');
+		$.post('/api/boards/' + boardId + '/deleteRequests/' + id + '/approve')
+				.success(function(data) {
+					loadDeleteRequests();
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+	});
+
+	$(document).on('click', '.decline-delete-request-link', function(e) {
+		e.preventDefault();
+
+		var id = $(e.target).data('request-id');
+		$.post('/api/boards/' + boardId + '/deleteRequests/' + id + '/decline')
+				.success(function(data) {
+					loadDeleteRequests();
+				})
+				.fail(function(data) {
+					alert("Error loading board");
+				});
+	});	
+
 	var lastUpdatedShape;
 	var clearStrokeOrFill = function(shape) {
 		if(!shape) return;
@@ -360,17 +418,17 @@ jQuery(function() {
 			lastUpdatedShape = null;
 		},
 		drag: function(ev, ui) {
-			console.log(ui.helper);
-			console.log($(this).data('tool-type'));
+			// console.log(ui.helper);
+			// console.log($(this).data('tool-type'));
 			if($(this).data('tool-type') == 'Trash') {
-				console.log("clearStrokeOrFill");
+				// console.log("clearStrokeOrFill");
 				clearStrokeOrFill(lastUpdatedShape);
 				lastUpdatedShape = null;				
 				var x = (ui.position.left) / stage.getAttr('scaleX');
 				var y = (ui.position.top+16) / stage.getAttr('scaleY');
 				var shape = stage.getIntersection({ x: x, y: y });
-				console.log("intersection");
-				console.log(shape);
+				// console.log("intersection");
+				// console.log(shape);
 
 				if(shape && shape.getClassName() != 'Circle') {
 					lastUpdatedShape = shape;
@@ -384,9 +442,9 @@ jQuery(function() {
 				}
 			}
 		},
-		// stop: function (ev, ui) {
-		// 		clearStrokeOrFill(lastUpdatedShape);
-		// }
+		stop: function (ev, ui) {
+				clearStrokeOrFill(lastUpdatedShape);
+		}
 	});
 
 	$('#container').droppable({
@@ -394,15 +452,6 @@ jQuery(function() {
 			var x = (ui.position.left) / stage.getAttr('scaleX');
 			var y = (ui.position.top+16) / stage.getAttr('scaleY');
 			var widget = WidgetCreator(ui.draggable.data('tool-type'), x, y);
-
-
-			// var shape = stage.getIntersection({ x: x, y: y });
-			// console.log("intersection");
-			// console.log(shape);
-
-			// shape.stroke('blue');
-			// shape.strokeWidth(20);
-			// layer.draw();
 		}
 	});
 

@@ -50,6 +50,10 @@ function TextWidgetLoader(widget, data) {
 	newTextWidget(widget, data);
 }
 
+function TextWidgetToString(widget, data) {
+	return data.text;
+}
+
 function WidgetCreator(name) {
 	var args = Array.prototype.slice.call(arguments);
 	args.shift();
@@ -60,6 +64,12 @@ function WidgetLoader(name) {
 	var args = Array.prototype.slice.call(arguments);
 	args.shift();
 	return self[name + "WidgetLoader"].apply(this, args);	
+}
+
+function WidgetToString(name) {
+	var args = Array.prototype.slice.call(arguments);
+	args.shift();
+	return self[name + "WidgetToString"].apply(this, args);		
 }
 
 function newImageWidget(widget, data) {
@@ -177,6 +187,9 @@ function ImageWidgetLoader(widget, data) {
   imageObj.src = imageUrl;		
 }
 
+function ImageWidgetToString(widget, data) {
+	return data.src;
+}
 
 function newLinkWidget(widget, data) {
 	console.log("newLinkWidget");
@@ -230,6 +243,32 @@ function LinkWidgetLoader(widget, data) {
 	newLinkWidget(widget, data);
 }
 		
+function LinkWidgetToString(widget, data) {
+	return data.text;
+}
+
+function TrashWidgetCreator(x, y) {
+	var shape = stage.getIntersection({ x: x, y: y });	
+	if(!shape || shape.getClassName() == 'Circle') return;
+
+	var wid = shape.getClassName() == 'Image' ? shape.getParent().id() : shape.id();
+
+	$.ajax({
+		url:'/api/boards/' + boardId + '/widgets/' + wid,
+		type: 'DELETE'
+	}).success(function(data) {
+		console.log("success");
+		console.log(data);
+		if(data.success === true) {
+		} else {
+			alert(data.error);
+		}
+	}).fail(function(data) {
+		alert("Error! Please try again later");
+	});
+
+}
+
 // }
 // // function VideoWidget(x, y) {
 // // 	this.base = BoardWidget;

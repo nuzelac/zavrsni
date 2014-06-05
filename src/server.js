@@ -10,6 +10,7 @@ var express = require('express'),
     Board = require('./board-model')
     Widget = require('./widget-model'),
     JoinRequest = require('./join-request-model'),
+    DeleteRequest = require('./delete-request-model'),
     bodyParser = require('body-parser'),
     jwt = require('jsonwebtoken'),
     socketioJwt = require('socketio-jwt'),
@@ -280,6 +281,89 @@ app.post('/api/boards/:id/requests',
   }
 );
 
+app.get('/api/boards/:id/deleteRequests',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({success: false, error: err});
+
+        DeleteRequest.find({
+          'board': board._id,
+          'user': user._id
+        })
+        .populate({
+          path: 'widget',
+        })
+        .exec(function(err, requests) {
+          if(err) res.json({ success: false, error: err });
+
+          res.json({success: true, requests: requests});        
+        });
+
+      });
+    });
+  }
+);
+
+app.post('/api/boards/:bid/deleteRequests/:id/approve',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+        DeleteRequest.findOne({
+          '_id': req.params.id,
+          'user': user._id,
+        })
+        .populate('widget')
+        .exec(function(err, request) {
+          if(err) res.json({ success: false, error: err });
+
+          if(request) {
+            request.widget.remove(function(err) {
+              if(err) res.json({ success: false, error: err });                
+              request.remove(function(err) {
+                sio.sockets.in(request.board).emit('deleteElement', request.widget);
+                res.json({ success: true });
+              });
+            });
+          } else {
+            res.json({success: false, error: 'Invalid request'});        
+          }
+        });
+    });
+  }
+);
+
+app.post('/api/boards/:bid/deleteRequests/:id/decline',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+        DeleteRequest.findOne({
+          '_id': req.params.id,
+          'user': user._id,
+        })
+        .populate('board')
+        .populate('user')
+        .exec(function(err, request) {
+          if(err) res.json({ success: false, error: err });
+
+          if(request) {
+            request.remove();
+            res.json({ success: true });
+          } else {
+            res.json({success: false, error: 'Invalid request'});        
+          }
+        });
+    });
+  }
+);
+
 app.post('/api/boards/:id/widgets',
   expressJwt({ secret: jwtSecret }),
   function(req, res) {
@@ -339,6 +423,48 @@ app.put('/api/boards/:id/widgets/:wid',
           });
         });
 
+      });      
+    });
+  }
+);
+
+app.delete('/api/boards/:id/widgets/:wid',
+  expressJwt({ secret: jwtSecret }),
+  function(req, res) {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+      if(err) res.json({success: false, error: err});
+
+      Board.findOne({ _id: req.params.id }, function(err, board) {
+        if(err) res.json({ success: false, error: err });
+        if(board.users.indexOf(user._id) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+        if(board.widgets.indexOf(req.params.wid) === -1) res.json({ success: false, error: "User not authorized to view the board" });
+      
+        Widget.findOne({ _id: req.params.wid }, function(err, widget) {
+          if(err) res.json({success: false, error: err });
+
+          if(widget.user == user.id) {
+            widget.remove(function(err) {
+              if(err) res.json({ success: false, error: err });                
+              sio.sockets.in(board._id).emit('deleteElement', widget);
+              res.json({ success: true });
+            });
+          } else {
+            DeleteRequest.findOne({ widget: req.params.wid }, function(err, deleteRequest) {
+              if(deleteRequest === null) {
+                var deleteRequest = new DeleteRequest({
+                  board: board._id,
+                  user: widget.user,
+                  widget: widget._id,
+                });
+
+                deleteRequest.save(function(err) {
+                  sio.sockets.in(board._id).emit('newDeleteRequest', widget);                  
+                });
+              }
+              res.json({ success: false, error: 'Deletion request sent to the author' });
+            });
+          }
+        });
       });      
     });
   }

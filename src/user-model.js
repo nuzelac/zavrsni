@@ -3,7 +3,8 @@ var mongoose = require('mongoose'),
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10,
     Board = require('./board-model'),
-    Widget = require('./widget-model');
+    Widget = require('./widget-model'),
+    DeleteRequest = require('./delete-request-model');
 
 var UserSchema = new Schema({
     username: { type: String, required: true, index: { unique: true } },
@@ -11,6 +12,7 @@ var UserSchema = new Schema({
     administers: [{ type: Schema.ObjectId, ref: 'Board' }],
     boards: [{ type: Schema.ObjectId, ref: 'Board' }],
     widgets: [{ type: Schema.ObjectId, ref: 'Widget' }],
+    deleteRequests: [{ type: Schema.ObjectId, ref: 'DeleteRequest' }],  
 });
 
 UserSchema.pre('save', function(next) {
