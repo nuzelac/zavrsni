@@ -84,7 +84,7 @@ function addAnchor(group, x, y, name) {
     stroke: "#666",
     fill: "#ddd",
     strokeWidth: 2,
-    radius: 8,
+    radius: 15,
     name: name,
     draggable: true
   });

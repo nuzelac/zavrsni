@@ -158,7 +158,7 @@ var loadDeleteRequests = function() {
 }
 
 var setupSocketIO = function(jwtoken) {
-	socket = io.connect('http://localhost:4000', {
+	socket = io.connect(null, {
 		query: 'token=' + jwtoken
 	});
 
