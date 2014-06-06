@@ -21,7 +21,7 @@ function TextWidgetCreator(x, y) {
 		text: text,
 		fontSize: 30,
 		fontFamily: 'Calibri',
-		fill: 'green',
+		fill: 'black',
 		draggable: true,
 	};
 

@@ -38,7 +38,7 @@
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
           <!-- <li class="active"><a href="#">Link</a></li> -->
-          <!-- <li><a href="#">Link</a></li> -->
+          <li><a href="#" id="go-back-to-main-menu" style="display:none">Main Menu</a></li>
 <!--           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
             <ul class="dropdown-menu">
@@ -104,11 +104,32 @@
           <center>
             <div id="container"></div>
             <div id="tools">
-              <img src="media/text-icon.png" class="board-tool" data-tool-type="Text" />
+<!--               <img src="media/text-icon.png" class="board-tool" data-tool-type="Text" />
               <img src="media/link-icon.png" class="board-tool" data-tool-type="Link" />
               <img src="media/image-icon.png" class="board-tool" data-tool-type="Image" />
+ -->              <div>
+                <ul class="glyphicons">
+                  <li>
+                    <span class="glyphicon glyphicon-text-height board-tool" data-tool-type="Text"></span>
+                    <span class="glyphicon-class">Text</span>
+                  </li>
+                  <li>
+                    <span class="glyphicon glyphicon-link board-tool" data-tool-type="Link"></span>
+                    <span class="glyphicon-class">Link</span>
+                  </li>
+                  <li>
+                    <span class="glyphicon glyphicon-picture board-tool" data-tool-type="Image"></span>
+                    <span class="glyphicon-class">Image</span>
+                  </li>
+                  <li>
+                    <span class="glyphicon glyphicon-trash board-tool" data-tool-type="Trash"></span>
+                    <span class="glyphicon-class">Trash</span>
+                  </li>
+                </ul>
+              </div>
+
               <!-- <img src="media/video-icon.png" class="board-tool" data-tool-type="Video" /> -->
-              <img src="media/trash-icon.png" class="board-tool" data-tool-type="Trash" />
+<!--               <img src="media/trash-icon.png" class="board-tool" data-tool-type="Trash" /> -->
               <div id="delete-requests" style="display: none;">
                 <h4>Delete requests</h4>
                 <ol id="delete-request-list">

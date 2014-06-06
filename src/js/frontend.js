@@ -65,12 +65,14 @@ var saveElementData = function(wid, x, y, width, height) {
 var transitionToMainMenu = function() {
 	// hide login
 	$('#logout-link').show();
+	$('#go-back-to-main-menu').show();
 	$('.form-signin').hide();
 	$('#mainMenu').show();
 };
 
 var logout = function() {
 	$('#logout-link').hide();
+	$('#go-back-to-main-menu').hide();
 	$('.form-signin').show();
 	$('#mainMenu').hide();
 	$('#board').hide();
@@ -89,7 +91,7 @@ var loadBoards = function() {
 			$('#existing-board-list').empty();
 			data.boards.forEach(function(board) {
 				var html = "<li>";
-				html += board.topic + ", user: " + board.user + ", admin: " + board.admin + " ";
+				html += board.topic + " "; // + ", user: " + board.user + ", admin: " + board.admin + " ";
 				if(board.user) {
 			  	html += "<a href='#" + board._id + "' data-board-id='" + board._id +"' class='join-board-link'>Join</a>";
 				} else if(board.requested) {
@@ -436,7 +438,7 @@ jQuery(function() {
 		if(!shape) return;
 
 		if(shape.getClassName() == 'Text') {
-			shape.setFill('green');
+			shape.setFill('black');
 		} else {
 			shape.stroke(null);
 		}
