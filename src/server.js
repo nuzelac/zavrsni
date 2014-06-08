@@ -26,7 +26,7 @@ app.use('/fonts', express.static(__dirname + '/fonts'));
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser());
 
-server.listen(4000, '192.168.1.239');
+server.listen(4000);
 app.use(cors());
 
 var jwtSecret = "tajnikljuc";
